@@ -1,0 +1,17 @@
+golang/bin
+python/.venv
+typescript/node_modules
+log
+
+# columba-livia v
+golang/generated/models
+golang/generated/message
+golang/generated/server
+golang/generated/client
+python/generated/models
+python/generated/message
+python/generated/server
+typescript/src/generated/models
+typescript/src/generated/message
+typescript/src/generated/client
+# columba-livia ^

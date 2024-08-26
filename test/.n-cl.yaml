@@ -1,0 +1,18 @@
+golang:
+  project: golang
+  server: generated/server
+  client: generated/client
+  models: generated/models
+  message: generated/message
+
+typescript:
+  project: typescript
+  client: src/generated/client
+  models: src/generated/models
+  message: src/generated/message
+
+python:
+  project: python
+  server: generated/server
+  models: generated/models
+  message: generated/message

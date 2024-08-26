@@ -1,0 +1,273 @@
+openapi: 3.1.0
+info:
+  title: columba-livia
+  version: 0.0.0
+servers:
+  - url: http://127.0.0.1:30435/
+tags:
+  - name: testTag1
+    description: 测试 tag 1 ，测试各种类型的请求/响应参数
+  - name: testTag2
+    description: |
+      测试 
+      tag
+      2
+
+paths:
+  /schema/{uri1}/{uri2}:
+    parameters:
+      - in: path
+        name: uri1
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: qry1
+        required: true
+        schema:
+          type: string
+
+    put:
+      operationId: op1
+      tags:
+        - testTag1
+      description: |
+        用于测试 请求/响应 的解析，
+        将请求内容(uri, qry, req) 在返回主体(rsp) 中原样返回
+      parameters:
+        - in: path
+          name: uri2
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: qry2
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: qryo
+          description: 可选的 query 参数
+          required: false
+          schema:
+            type: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                req1: 
+                  type: integer
+                req2: 
+                  type: array
+                  items: 
+                    type: string
+              required:
+                - req1
+                - req2
+      responses:
+        "200":
+          description: "返回的内容"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uri1:
+                    type: string
+                  uri2:
+                    type: integer
+                  qry1:
+                    type: string
+                  qry2:
+                    type: integer
+                  qryo:
+                    type: number
+                  req1: 
+                    type: integer
+                  req2: 
+                    type: array
+                    items:
+                      type: string
+                required:
+                  - uri1
+                  - uri2
+                  - qry1
+                  - qry2
+                  - req1
+                  - req2
+
+    patch:
+      operationId: op2
+      tags: 
+        - testTag1
+      description: |
+        用于测试 请求/响应 的解析，
+        使用引用的 schema 定义类型。
+      parameters:
+        - in: path
+          name: uri2
+          required: true
+          schema:
+            type: integer        
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Object1"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Object1"
+
+    post:
+      operationId: op3
+      tags: 
+        - testTag1
+      description: |
+        用于测试 请求/响应 的解析，
+        使用 text/plain 的类型
+      parameters:
+        - in: path
+          name: uri2
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              $ref: "#/components/schemas/Content"
+      responses:
+        "200":
+          description: ""
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /response:
+    get:
+      operationId: op4
+      tags:
+        - testTag2
+      description: |
+        测试响应
+        default 响应使用 200 状态码
+      responses:
+        default:
+          description: ""
+          content:
+            text/plain:
+              schema:
+                type: string
+    delete:
+      operationId: op5
+      tags:
+        - testTag2
+      description: |
+        测试响应
+        空 响应使用 204 状态码
+    post:
+      operationId: op6
+      tags:
+        - testTag2
+      description: |
+        测试响应
+        可能存在不同的状态码返回
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code: 
+                  type: integer
+              required:
+                - code
+      responses:
+        200:
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+        201:
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+        202:
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+        203:
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+components:
+  schemas:
+    Content:
+      type: string
+
+    Object1:
+      type: object
+      description: "测试object 类型 使用各种 不同类型/引用 的字段"
+      properties:
+        stringField:
+          type: string
+          description: string 字段
+        intField:
+          type: integer
+          description: integer 字段
+        floatField:
+          type: number
+          description: number 字段
+        arrayField1:
+          type: array
+          description: array 字段
+          items:
+            type: integer
+        arrayField2:
+          type: array
+          description: array 字段
+          items:
+            $ref: "#/components/schemas/Object2"
+        objectField1:
+          type: object
+          description: object 字段
+          properties:
+            intField:
+              type: integer
+              description: integer 字段
+        objectField2:
+          $ref: "#/components/schemas/Object2"
+      required:
+        - stringField
+        - intField
+        - floatField
+        - arrayField1
+        - arrayField2
+        - objectField1
+        - objectField2
+    Object2:
+      type: object
+      description: "测试object 类型 可选/必要 字段"
+      properties:
+        requiredField:
+          type: string
+          description: string 字段
+        optionalField:
+          type: string
+          description: string 字段
+      required:
+        - requiredField
