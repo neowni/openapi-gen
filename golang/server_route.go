@@ -31,9 +31,9 @@ func serverRoute(
 		).Indent(4)
 
 		return c.C(`
-type Server = struct%s
+type Server = struct %s
 
-func New(engine *gin.Engine) *Server {
+func New(engine gin.IRoutes) *Server {
 	s := new(Server)
 %s
 	return s

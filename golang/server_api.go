@@ -40,7 +40,7 @@ func serverApiStruct(
 ) c.C {
 	return c.C(`
 type %s struct {
-	engine *gin.Engine
+	engine gin.IRoutes
 }
 `).
 		TrimSpace().

@@ -67,7 +67,7 @@ func type_(
 	// 引用类型
 	ref := common.SchemaRef(schemaProxy)
 	if ref != "" {
-		return c.C(file.modelsNamespace() + ref)
+		return c.C(file.modelsNamespace() + ExportName(ref))
 	}
 
 	jsonType := common.SchemaType(schemaProxy.Schema())

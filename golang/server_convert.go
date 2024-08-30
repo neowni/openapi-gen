@@ -15,7 +15,9 @@ func serverConvert() (render render) {
 }
 
 const serverConvertContent = `
-//                                                                              工具函数
+var ErrorHandler func(ctx *gin.Context, err error)
+
+//                                                                              转换函数
 
 var convert *_convert
 
@@ -87,27 +89,12 @@ func (*_convert) ResponseError(ctx *gin.Context, err error) (abort bool) {
 		return false
 	}
 
-	errStatus, ok := err.(*ErrorStatus)
-	if !ok {
-		errStatus = &ErrorStatus{
-			Status: http.StatusInternalServerError,
-			Err:    err,
-		}
+	if ErrorHandler == nil {
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+	} else {
+		ErrorHandler(ctx, err)
 	}
 
-	ctx.AbortWithError(errStatus.Status, errStatus.Err)
-
 	return true
-}
-
-//																				异常
-
-type ErrorStatus struct {
-	Status int
-	Err    error
-}
-
-func (e *ErrorStatus) Error() string {
-	return e.Err.Error()
 }
 `

@@ -32,11 +32,12 @@ type CLI struct {
 
 func (f *CLI) Run() (err error) {
 	if f.WorkDir != "-" {
-
 		err = os.Chdir(f.WorkDir)
 		if err != nil {
 			return err
 		}
+	} else {
+		f.WorkDir = "."
 	}
 
 	// 读取配置
