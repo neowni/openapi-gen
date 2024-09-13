@@ -1,19 +1,19 @@
 package golang
 
 import (
-	"columba-livia/common"
-	c "columba-livia/content"
-
 	"github.com/pb33f/libopenapi/datamodel/high/base"
 	v3 "github.com/pb33f/libopenapi/datamodel/high/v3"
 	"github.com/pb33f/libopenapi/orderedmap"
+
+	"columba-livia/common"
+	c "columba-livia/content"
 )
 
 func serverPath(path string) string {
 	return common.PathReg.ReplaceAllString(path, ":$1")
 }
 
-func serverApi(
+func serverAPI(
 	tag *base.Tag,
 	pathItems *orderedmap.Map[string, *v3.PathItem],
 ) (render render) {
@@ -24,10 +24,10 @@ func serverApi(
 		file.importMap["github.com/gin-gonic/gin"] = ""
 
 		list := make([]c.C, 0)
-		list = append(list, serverApiStruct(tag.Name))
+		list = append(list, serverAPIStruct(tag.Name))
 
 		for _, op := range common.TagOperationList(tag.Name, pathItems) {
-			list = append(list, serverApiOperation(op))
+			list = append(list, serverAPIOperation(op))
 		}
 
 		return c.List(1, list...)
@@ -35,7 +35,7 @@ func serverApi(
 }
 
 // api 结构体
-func serverApiStruct(
+func serverAPIStruct(
 	name string,
 ) c.C {
 	return c.C(`
@@ -48,7 +48,7 @@ type %s struct {
 }
 
 // api 注册函数
-func serverApiOperation(
+func serverAPIOperation(
 	op *common.Operation,
 ) c.C {
 	uriExist := len(op.URI) != 0
@@ -68,10 +68,10 @@ handler func%s %s,
 			// 参数
 			c.BodyC(c.List(0,
 				c.C("ctx context.Context,"),
-				c.If(uriExist, c.C("uri *message.%s,").Format(ExportName(op.ID+"URI"))),
-				c.If(qryExist, c.C("qry *message.%s,").Format(ExportName(op.ID+"Qry"))),
-				c.If(reqExist, c.C("req *message.%s,").Format(ExportName(op.ID+"Req"))),
-			).Indent(4)),
+				c.If(uriExist, c.C("uri *message.%s,").Format(ExportName(op.ID)+"URI")),
+				c.If(qryExist, c.C("qry *message.%s,").Format(ExportName(op.ID)+"Qry")),
+				c.If(reqExist, c.C("req *message.%s,").Format(ExportName(op.ID)+"Req")),
+			).IndentTab(1)),
 			// 返回值
 			c.BodyC(c.List(0,
 				append(
@@ -82,14 +82,14 @@ handler func%s %s,
 					}),
 					c.C("err error,"),
 				)...,
-			).Indent(4)),
+			).IndentTab(1)),
 		)
 
 	// 																注册函数名称
 
 	registerName := c.C("func (tag *%s) %s%s").Format(
 		op.Tag, ExportName(op.ID),
-		c.BodyC(handlerDecl.Indent(4)),
+		c.BodyC(handlerDecl.IndentTab(1)),
 	)
 
 	// 																  handle函数
@@ -101,7 +101,7 @@ uri := new(message.%s)
 if convert.BindURI(ctx, uri) {
 	return
 }
-`).TrimSpace().Format(ExportName(op.ID+"URI")),
+`).TrimSpace().Format(ExportName(op.ID)+"URI"),
 	)
 
 	handlerQry := c.If(qryExist,
@@ -111,7 +111,7 @@ qry := new(message.%s)
 if convert.BindQry(ctx, qry) {
 	return
 }
-`).TrimSpace().Format(ExportName(op.ID+"Qry")),
+`).TrimSpace().Format(ExportName(op.ID)+"Qry"),
 	)
 
 	handlerReq := c.If(reqExist,
@@ -122,7 +122,7 @@ if convert.BindReq%s(ctx, req) {
 	return
 }
 `).TrimSpace().Format(
-			ExportName(op.ID+"Req"),
+			ExportName(op.ID)+"Req",
 			ExportName(string(reqType)),
 		),
 	)
@@ -180,7 +180,7 @@ case rsp%s != nil:
 				handlerReq,
 				handlerHandle,
 				handlerReturn,
-			).Indent(4),
+			).IndentTab(1),
 		),
 	)
 
@@ -192,8 +192,8 @@ case rsp%s != nil:
 				c.C(`"%s",`).Format(op.Method),
 				c.C(`"%s",`).Format(serverPath(op.Path)),
 				handlerFunc,
-			).Indent(4),
-		)).Indent(4),
+			).IndentTab(1),
+		)).IndentTab(1),
 	)
 
 	return c.JoinSpace(registerName, registerBody)

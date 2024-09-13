@@ -11,6 +11,7 @@ import (
 	"github.com/pb33f/libopenapi/orderedmap"
 )
 
+// TagOperationList //
 // 整理 属于 tag 的所有 operation
 func TagOperationList(
 	tag string,
@@ -106,7 +107,7 @@ type ContentType string
 
 const (
 	ContentText  = ContentType("text")
-	ContentJson  = ContentType("json")
+	ContentJSON  = ContentType("json")
 	ContentEmpty = ContentType("empty")
 )
 
@@ -138,7 +139,7 @@ func contentType(
 		}
 	case "application/json":
 		return ContentSchema{
-			ContentType: ContentJson,
+			ContentType: ContentJSON,
 			SchemaProxy: contentsMap.First().Value().Schema,
 		}
 	default:

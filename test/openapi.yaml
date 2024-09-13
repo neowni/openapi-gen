@@ -232,6 +232,8 @@ components:
         floatField:
           type: number
           description: number 字段
+        enumField:
+          $ref: "#/components/schemas/Enum"          
         arrayField1:
           type: array
           description: array 字段
@@ -255,6 +257,7 @@ components:
         - stringField
         - intField
         - floatField
+        - enumField
         - arrayField1
         - arrayField2
         - objectField1
@@ -271,3 +274,10 @@ components:
           description: string 字段
       required:
         - requiredField
+    Enum:
+      type: string
+      description: "测试enum 类型"
+      enum:
+        - value1
+        - value2
+        - value3

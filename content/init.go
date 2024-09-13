@@ -11,18 +11,21 @@ func (c C) String() string {
 	return string(c)
 }
 
+// TrimSpace //
 // 去除 空格
 func (c C) TrimSpace() C {
 	return C(strings.TrimSpace(string(c)))
 }
 
+// Format //
 // 格式化
 func (c C) Format(a ...any) C {
 	return C(fmt.Sprintf(string(c), a...))
 }
 
+// IndentSpace //
 // 缩进
-func (c C) Indent(indent int) C {
+func (c C) IndentSpace(indent int) C {
 	indentSpace := strings.Repeat(" ", indent)
 
 	lines := strings.Split(string(c), "\n")
@@ -36,6 +39,21 @@ func (c C) Indent(indent int) C {
 	return C(strings.Join(lines, "\n"))
 }
 
+func (c C) IndentTab(indent int) C {
+	indentSpace := strings.Repeat("	", indent)
+
+	lines := strings.Split(string(c), "\n")
+	for index, line := range lines {
+		if line == "" {
+			continue
+		}
+		lines[index] = indentSpace + line
+	}
+
+	return C(strings.Join(lines, "\n"))
+}
+
+// BodyF //
 // 花括号
 func BodyF(c C) C {
 	if c == "" {
@@ -45,6 +63,7 @@ func BodyF(c C) C {
 	return C("{\n" + c + "\n}")
 }
 
+// BodyS //
 // 方括号
 func BodyS(c C) C {
 	if c == "" {
@@ -54,6 +73,7 @@ func BodyS(c C) C {
 	return C("[\n" + c + "\n]")
 }
 
+// BodyC //
 // 圆括号
 func BodyC(c C) C {
 	if c == "" {

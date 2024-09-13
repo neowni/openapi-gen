@@ -1,9 +1,11 @@
 package golang
 
 import (
-	c "columba-livia/content"
 	"fmt"
+	"sort"
 	"strings"
+
+	c "columba-livia/content"
 )
 
 // 使用 models/message 包时的包名，无论原有的包名是什么
@@ -59,6 +61,10 @@ func imports(projectName string) c.C {
 		}
 	}
 
+	sort.Strings(standard)
+	sort.Strings(thirdParty)
+	sort.Strings(internal)
+
 	// 整理导入
 	importList := standard
 	if len(thirdParty) != 0 {
@@ -81,6 +87,6 @@ func imports(projectName string) c.C {
 
 	return c.JoinSpace(
 		"import",
-		c.BodyC(content.Indent(4)),
+		c.BodyC(content.IndentTab(1)),
 	)
 }

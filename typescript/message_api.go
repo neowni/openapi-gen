@@ -1,16 +1,17 @@
 package typescript
 
 import (
-	"columba-livia/common"
-	c "columba-livia/content"
 	"fmt"
 
 	"github.com/pb33f/libopenapi/datamodel/high/base"
 	v3 "github.com/pb33f/libopenapi/datamodel/high/v3"
 	"github.com/pb33f/libopenapi/orderedmap"
+
+	"columba-livia/common"
+	c "columba-livia/content"
 )
 
-func messageApi(
+func messageAPI(
 	tag *base.Tag,
 	pathItems *orderedmap.Map[string, *v3.PathItem],
 ) (render render) {
@@ -52,7 +53,7 @@ func messageURI(
 
 	return c.C("export type %sURI = %s;").Format(
 		op.ID,
-		c.BodyF(c.List(1, fieldList...).Indent(2)),
+		c.BodyF(c.List(1, fieldList...).IndentSpace(2)),
 	)
 }
 
@@ -84,7 +85,7 @@ func messageQry(
 
 	return c.C("export type %sQry = %s;").Format(
 		op.ID,
-		c.BodyF(c.List(1, fieldList...).Indent(2)),
+		c.BodyF(c.List(1, fieldList...).IndentSpace(2)),
 	)
 }
 

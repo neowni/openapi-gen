@@ -1,10 +1,11 @@
 package python
 
 import (
-	c "columba-livia/content"
 	"fmt"
 
 	"github.com/pb33f/libopenapi/datamodel/high/base"
+
+	c "columba-livia/content"
 )
 
 func serverInit(
@@ -33,6 +34,6 @@ func serverInit(
 class Server:
     def __init__(self, app: _Flask):
 %s
-		`).TrimSpace().Format(c.List(0, fieldList...).Indent(8))
+		`).TrimSpace().Format(c.List(0, fieldList...).IndentSpace(8))
 	}
 }

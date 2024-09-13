@@ -1,20 +1,21 @@
 package golang
 
 import (
-	"columba-livia/common"
-	c "columba-livia/content"
 	"strings"
 
 	"github.com/pb33f/libopenapi/datamodel/high/base"
 	v3 "github.com/pb33f/libopenapi/datamodel/high/v3"
 	"github.com/pb33f/libopenapi/orderedmap"
+
+	"columba-livia/common"
+	c "columba-livia/content"
 )
 
 func clientPath(path string) string {
 	return common.PathReg.ReplaceAllString(path, "{$1}")
 }
 
-func clientApi(
+func clientAPI(
 	tag *base.Tag,
 	pathItems *orderedmap.Map[string, *v3.PathItem],
 ) (render render) {
@@ -24,17 +25,17 @@ func clientApi(
 		file.importMap["github.com/go-resty/resty/v2"] = ""
 
 		list := make([]c.C, 0)
-		list = append(list, clientApiStruct(tag.Name))
+		list = append(list, clientAPIStruct(tag.Name))
 
 		for _, op := range common.TagOperationList(tag.Name, pathItems) {
-			list = append(list, clientApiOperation(op))
+			list = append(list, clientAPIOperation(op))
 		}
 
 		return c.List(1, list...)
 	}
 }
 
-func clientApiStruct(
+func clientAPIStruct(
 	name string,
 ) c.C {
 	return c.C(`
@@ -46,7 +47,7 @@ type %s struct {
 		Format(name)
 }
 
-func clientApiOperation(
+func clientAPIOperation(
 	op *common.Operation,
 ) c.C {
 	uriExist := len(op.URI) != 0
@@ -79,7 +80,7 @@ func clientApiOperation(
 			c.If(uriExist, c.C("uri *message.%s,").Format(ExportName(op.ID+"URI"))),
 			c.If(qryExist, c.C("qry *message.%s,").Format(ExportName(op.ID+"Qry"))),
 			c.If(reqExist, c.C("req *message.%s,").Format(ExportName(op.ID+"Req"))),
-		).Indent(4)),
+		).IndentTab(1)),
 		// 函数返回值
 		c.BodyC(c.List(0,
 			append(
@@ -90,7 +91,7 @@ func clientApiOperation(
 				}),
 				c.C("err error,"),
 			)...,
-		).Indent(4)),
+		).IndentTab(1)),
 	)
 
 	//																	函数主体
@@ -183,7 +184,7 @@ case %s:
 				funcBodyReq,
 				funcBodyHandle,
 				funcBodyRsp,
-			).Indent(4),
+			).IndentTab(1),
 		)),
 	)
 }

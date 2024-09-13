@@ -1,10 +1,11 @@
 package python
 
 import (
-	c "columba-livia/content"
 	"fmt"
 
 	"github.com/pb33f/libopenapi/datamodel/high/base"
+
+	c "columba-livia/content"
 )
 
 func messageInit(

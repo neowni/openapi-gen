@@ -1,20 +1,21 @@
 package python
 
 import (
-	"columba-livia/common"
-	c "columba-livia/content"
 	"strings"
 
 	"github.com/pb33f/libopenapi/datamodel/high/base"
 	v3 "github.com/pb33f/libopenapi/datamodel/high/v3"
 	"github.com/pb33f/libopenapi/orderedmap"
+
+	"columba-livia/common"
+	c "columba-livia/content"
 )
 
 func serverPath(path string) string {
 	return common.PathReg.ReplaceAllString(path, "<$1>")
 }
 
-func serverApi(
+func serverAPI(
 	tag *base.Tag,
 	pathItems *orderedmap.Map[string, *v3.PathItem],
 ) (render render) {
@@ -27,28 +28,28 @@ func serverApi(
 
 		list := make([]c.C, 0)
 		for _, operation := range common.TagOperationList(tag.Name, pathItems) {
-			list = append(list, serverApiOperation(operation))
+			list = append(list, serverAPIOperation(operation))
 		}
 
 		return c.List(1,
 			// 类名
 			c.List(0,
 				c.C(`class %s:`).Format(tag.Name),
-				c.C(`"""%s"""`).Format(tag.Description).Indent(4),
+				c.C(`"""%s"""`).Format(tag.Description).IndentSpace(4),
 			),
 			// init 函数
 			c.List(0,
 				c.C("def __init__(self, app: _Flask):"),
-				c.C("self.__app = app").Indent(4),
-			).Indent(4),
+				c.C("self.__app = app").IndentSpace(4),
+			).IndentSpace(4),
 			// 方法
-			c.List(1, list...).Indent(4),
+			c.List(1, list...).IndentSpace(4),
 		)
 	}
 }
 
 // api 注册函数
-func serverApiOperation(
+func serverAPIOperation(
 	op *common.Operation,
 ) c.C {
 	uriExist := len(op.URI) != 0
@@ -68,7 +69,7 @@ func serverApiOperation(
 					c.If(uriExist, c.C("_message.%s.%s.uri,").Format(op.Tag, op.ID)),
 					c.If(qryExist, c.C("_message.%s.%s.qry,").Format(op.Tag, op.ID)),
 					c.If(reqExist, c.C("_message.%s.%s.req,").Format(op.Tag, op.ID)),
-				).Indent(4),
+				).IndentSpace(4),
 			)),
 			// 返回值
 			c.C("_typing.Awaitable[_typing.Tuple%s],").Format(c.BodyS(
@@ -76,9 +77,9 @@ func serverApiOperation(
 					c.ForList(rspType, func(item common.ContentSchema) c.C {
 						return c.C("_typing.Optional[_message.%s.%s.rsp%s],").Format(op.Tag, op.ID, item.RspCode)
 					})...,
-				).Indent(4),
+				).IndentSpace(4),
 			)),
-		).Indent(4),
+		).IndentSpace(4),
 	))
 
 	//                                                                  注册内容
@@ -102,7 +103,7 @@ qry = _message.%s.%s.qry(**args)
 
 	handlerReq := c.C("")
 	switch reqType.ContentType {
-	case common.ContentJson:
+	case common.ContentJSON:
 		if common.SchemaType(reqType.SchemaProxy.Schema()) == common.TypeArray {
 			handlerReq = c.C(`
 reqType = _typing.get_args(_message.%s.%s.req)[0]
@@ -134,7 +135,7 @@ req = [reqType(**i) for i in _request.get_json()]
 	handlerRsp := make([]c.C, 0)
 	for _, rsp := range rspType {
 		r := c.C(`""`)
-		if rsp.ContentType == common.ContentJson {
+		if rsp.ContentType == common.ContentJSON {
 			if common.SchemaType(rsp.SchemaProxy.Schema()) == common.TypeArray {
 				r = c.C("[i.model_dump_json(exclude_none=True) for i in rsp%s]").Format(rsp.RspCode)
 			} else {
@@ -166,9 +167,9 @@ if rsp%s is not None:
 				c.BodyC(c.List(0,
 					"self,",
 					handlerDecl,
-				).Indent(4)),
+				).IndentSpace(4)),
 			),
-			c.C(`"""%s"""`).Format(op.Description).Indent(4),
+			c.C(`"""%s"""`).Format(op.Description).IndentSpace(4),
 		),
 		c.List(0,
 			registerName,
@@ -178,7 +179,7 @@ if rsp%s is not None:
 				handlerReq,
 				handlerHandle,
 				c.List(1, handlerRsp...),
-			).Indent(4),
-		).Indent(4),
+			).IndentSpace(4),
+		).IndentSpace(4),
 	)
 }

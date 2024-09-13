@@ -104,7 +104,7 @@ func (c *_convert) qryString(r *resty.Request, n string, v *string) {
 
 // 																				rsp
 
-func (*_convert) ResponseJson(resp *resty.Response, rsp any) (err error) {
+func (*_convert) ResponseJSON(resp *resty.Response, rsp any) (err error) {
 	body := resp.Body()
 	if len(body) == 0 {
 		body = []byte("{}")

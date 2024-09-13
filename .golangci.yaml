@@ -1,0 +1,62 @@
+linters:
+  enable:
+    # 未处理的 error
+    - errcheck
+    # 禁止使用的标志符
+    - forbidigo
+    # 控制包导入顺序
+    - gci
+    # 注释中的关键字
+    - godox
+    # 简化代码
+    - gosimple
+    # 可疑结构
+    - govet
+    # 未使用的变量赋值
+    - ineffassign
+    # 静态检查
+    - staticcheck
+    # 风格检查
+    - stylecheck
+    # 类型检查
+    - typecheck
+    # 未使用的常量、变量、函数和类型
+    - unused
+
+linters-settings:
+  forbidigo:
+    forbid:
+      # 禁止使用 print
+      - ^print.*$
+      - ^fmt\.Print.*$
+      # 禁止使用 spew
+      - ^spew\.Dump.*$
+    analyze-types: true
+
+  gci:
+    # 导入顺序
+    sections:
+      - standard
+      - blank
+      - dot
+      - default
+      - prefix(github.com/go)
+      - localmodule
+
+  godox:
+    # 关键字检查
+    keywords:
+      - TODO
+
+  staticcheck:
+    checks: ["all"]
+
+  stylecheck:
+    # 忽略包注释规则
+    checks: ["all", "-ST1000"]
+
+  testifylint:
+    enable-all: true
+
+issues:
+  exclude-use-default: false

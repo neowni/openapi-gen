@@ -16,6 +16,7 @@ func serverConvert() (render render) {
 
 const serverConvertContent = `
 var ErrorHandler func(ctx *gin.Context, err error)
+var ErrorLogger func(err error)
 
 //                                                                              转换函数
 
@@ -23,13 +24,22 @@ var convert *_convert
 
 type _convert struct{}
 
-func (*_convert) BindReqJson(ctx *gin.Context, req any) (abort bool) {
+func (*_convert) BindReqJSON(ctx *gin.Context, req any) (abort bool) {
 	err := ctx.ShouldBind(req)
 	if err == nil {
 		return false
 	}
 
-	ctx.AbortWithError(http.StatusBadRequest, err)
+	if ErrorLogger != nil {
+		ErrorLogger(err)
+	}
+
+	ginErr := ctx.AbortWithError(http.StatusBadRequest, err)
+	if ginErr != nil {
+		if ErrorLogger != nil {
+			ErrorLogger(err)
+		}
+	}
 
 	return true
 }
@@ -41,7 +51,16 @@ func (*_convert) BindReqText(ctx *gin.Context, req *string) (abort bool) {
 		return false
 	}
 
-	ctx.AbortWithError(http.StatusBadRequest, err)
+	if ErrorLogger != nil {
+		ErrorLogger(err)
+	}
+
+	ginErr := ctx.AbortWithError(http.StatusBadRequest, err)
+	if ginErr != nil {
+		if ErrorLogger != nil {
+			ErrorLogger(err)
+		}
+	}
 
 	return true
 }
@@ -52,7 +71,16 @@ func (*_convert) BindURI(ctx *gin.Context, uri any) (abort bool) {
 		return false
 	}
 
-	ctx.AbortWithError(http.StatusBadRequest, err)
+	if ErrorLogger != nil {
+		ErrorLogger(err)
+	}
+
+	ginErr := ctx.AbortWithError(http.StatusBadRequest, err)
+	if ginErr != nil {
+		if ErrorLogger != nil {
+			ErrorLogger(err)
+		}
+	}
 
 	return true
 }
@@ -63,12 +91,21 @@ func (*_convert) BindQry(ctx *gin.Context, qry any) (abort bool) {
 		return false
 	}
 
-	ctx.AbortWithError(http.StatusBadRequest, err)
+	if ErrorLogger != nil {
+		ErrorLogger(err)
+	}
+
+	ginErr := ctx.AbortWithError(http.StatusBadRequest, err)
+	if ginErr != nil {
+		if ErrorLogger != nil {
+			ErrorLogger(err)
+		}
+	}
 
 	return true
 }
 
-func (*_convert) ResponseJson(
+func (*_convert) ResponseJSON(
 	ctx *gin.Context,
 	code int,
 	rsp any,
@@ -90,7 +127,12 @@ func (*_convert) ResponseError(ctx *gin.Context, err error) (abort bool) {
 	}
 
 	if ErrorHandler == nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
+		ginErr := ctx.AbortWithError(http.StatusInternalServerError, err)
+		if ginErr != nil {
+			if ErrorLogger != nil {
+				ErrorLogger(err)
+			}
+		}
 	} else {
 		ErrorHandler(ctx, err)
 	}

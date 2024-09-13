@@ -94,12 +94,23 @@ func main() {
 
 	c := client.New(base)
 
+	rdEnum := func() models.Enum {
+		switch rd.int() % 3 {
+		case 0:
+			return models.EnumValue1
+		case 1:
+			return models.EnumValue2
+		default:
+			return models.EnumValue3
+		}
+	}
+
 	// 																			op1
 
 	{
 		rspE := &message.Op1Rsp200{
-			Uri1: rd.string(),
-			Uri2: rd.int(),
+			URI1: rd.string(),
+			URI2: rd.int(),
 			Qry1: rd.string(),
 			Qry2: rd.int(),
 			Qryo: nil,
@@ -108,9 +119,9 @@ func main() {
 		}
 
 		rspA, err := c.TestTag1.Op1(
-			&message.Op1Uri{
-				Uri1: rspE.Uri1,
-				Uri2: rspE.Uri2,
+			&message.Op1URI{
+				URI1: rspE.URI1,
+				URI2: rspE.URI2,
 			},
 			&message.Op1Qry{
 				Qry1: rspE.Qry1,
@@ -138,6 +149,7 @@ func main() {
 			StringField: rd.string(),
 			IntField:    rd.int(),
 			FloatField:  rd.float64(),
+			EnumField:   rdEnum(),
 			ArrayField1: list(rd.int, 16),
 			ArrayField2: list(rdObj2, 4),
 			ObjectField1: struct {
@@ -149,9 +161,9 @@ func main() {
 		}
 
 		rspA, err := c.TestTag1.Op2(
-			&message.Op2Uri{
-				Uri1: rd.string(),
-				Uri2: rd.int(),
+			&message.Op2URI{
+				URI1: rd.string(),
+				URI2: rd.int(),
 			},
 			&message.Op2Qry{
 				Qry1: rd.string(),
@@ -167,9 +179,9 @@ func main() {
 		rspE := rd.string()
 
 		rspA, err := c.TestTag1.Op3(
-			&message.Op2Uri{
-				Uri1: rd.string(),
-				Uri2: rd.int(),
+			&message.Op2URI{
+				URI1: rd.string(),
+				URI2: rd.int(),
 			},
 			&message.Op2Qry{
 				Qry1: rd.string(),

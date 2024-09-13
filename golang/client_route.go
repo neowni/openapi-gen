@@ -1,9 +1,9 @@
 package golang
 
 import (
-	c "columba-livia/content"
-
 	"github.com/pb33f/libopenapi/datamodel/high/base"
+
+	c "columba-livia/content"
 )
 
 func clientRoute(
@@ -19,7 +19,7 @@ func clientRoute(
 					item.Name,
 				)
 			})...,
-		).Indent(4))
+		).IndentTab(1))
 
 		routeInit := c.List(0,
 			c.ForList(tags, func(item *base.Tag) c.C {
@@ -28,7 +28,7 @@ func clientRoute(
 					item.Name,
 				)
 			})...,
-		).Indent(4)
+		).IndentTab(1)
 
 		return c.C(`
 type Client = struct%s

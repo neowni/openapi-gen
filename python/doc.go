@@ -1,8 +1,9 @@
 package python
 
 import (
-	c "columba-livia/content"
 	"strings"
+
+	c "columba-livia/content"
 )
 
 func doc(

@@ -1,12 +1,14 @@
 package golang
 
 import (
-	"columba-livia/common"
-	c "columba-livia/content"
 	"slices"
 
 	"github.com/pb33f/libopenapi/datamodel/high/base"
 	"github.com/pb33f/libopenapi/orderedmap"
+	"gopkg.in/yaml.v3"
+
+	"columba-livia/common"
+	c "columba-livia/content"
 )
 
 func models(
@@ -53,6 +55,39 @@ func typeDecl(
 	name string,
 	schemaProxy *base.SchemaProxy,
 ) c.C {
+	// 枚举类型
+	if common.SchemaRef(schemaProxy) == "" &&
+		len(schemaProxy.Schema().Enum) != 0 {
+
+		jsonType := common.SchemaType(schemaProxy.Schema())
+		if jsonType != common.TypeString {
+			panic(jsonType)
+		}
+
+		exportName := ExportName(name)
+
+		return c.List(1,
+			c.C("type %s = string").Format(
+				exportName,
+			),
+
+			c.C(`const %s`).Format(c.BodyC(
+				c.List(0, c.ForList(
+					schemaProxy.Schema().Enum,
+					func(item *yaml.Node) c.C {
+						value := item.Value
+
+						return c.C(`%s%s %s = "%s"`).Format(
+							exportName, ExportName(value),
+							exportName, value,
+						)
+					},
+				)...).IndentTab(1),
+			)),
+		)
+	}
+
+	// 其他类型
 	return c.C("type %s = %s").Format(
 		ExportName(name),
 		type_(schemaProxy),
@@ -155,7 +190,7 @@ func object(
 
 	return c.C("struct %s").Format(
 		c.BodyF(
-			c.List(1, fieldList...).Indent(4),
+			c.List(1, fieldList...).IndentTab(1),
 		),
 	)
 }

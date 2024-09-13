@@ -1,15 +1,15 @@
 package python
 
 import (
-	"columba-livia/common"
-	c "columba-livia/content"
-
 	"github.com/pb33f/libopenapi/datamodel/high/base"
 	v3 "github.com/pb33f/libopenapi/datamodel/high/v3"
 	"github.com/pb33f/libopenapi/orderedmap"
+
+	"columba-livia/common"
+	c "columba-livia/content"
 )
 
-func messageApi(
+func messageAPI(
 	tag *base.Tag,
 	pathItems *orderedmap.Map[string, *v3.PathItem],
 ) (render render) {
@@ -22,7 +22,7 @@ func messageApi(
 					// 使用 class 用作 命名空间
 					c.List(0,
 						c.C("class %s:").Format(op.ID),
-						c.C(`"""%s"""`).Format(op.Description).Indent(4),
+						c.C(`"""%s"""`).Format(op.Description).IndentSpace(4),
 					),
 					// message 定义
 					c.List(1,
@@ -30,7 +30,7 @@ func messageApi(
 						messageQry(op),
 						messageReq(op),
 						messageRsp(op),
-					).Indent(4),
+					).IndentSpace(4),
 				),
 			)
 		}
@@ -67,7 +67,7 @@ func messageURI(
 
 	return c.List(1,
 		c.C(`class uri(_pydantic.BaseModel):`),
-		c.List(1, fieldList...).Indent(4),
+		c.List(1, fieldList...).IndentSpace(4),
 	)
 }
 
@@ -104,7 +104,7 @@ func messageQry(
 
 	return c.List(1,
 		c.C(`class qry(_pydantic.BaseModel):`),
-		c.List(1, fieldList...).Indent(4),
+		c.List(1, fieldList...).IndentSpace(4),
 	)
 }
 

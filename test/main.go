@@ -16,6 +16,11 @@ func check(err error) {
 	}
 }
 
+func p(format string, a ...any) {
+	_, err := os.Stdout.Write([]byte(fmt.Sprintf(format, a...)))
+	check(err)
+}
+
 func main() {
 	var err error
 
@@ -29,17 +34,20 @@ func main() {
 		logPath := "./test/log/generate.log"
 		logFile, err := os.Create(logPath)
 		check(err)
-		defer logFile.Close()
+		defer func() {
+			err := logFile.Close()
+			check(err)
+		}()
 
-		fmt.Printf(">>> 生成代码\n")
-		fmt.Printf("日志：%s\n", logPath)
+		p(">>> 生成代码\n")
+		p("日志：%s\n", logPath)
 
-		cmd := exec.Command("go", "run", "cmd/cl/main.go", "./test")
+		cmd := exec.Command("go", "run", "cmd/n-cl/main.go", "./test")
 		cmd.Stdout = logFile
 		cmd.Stderr = logFile
 		err = cmd.Run()
 		if err != nil {
-			fmt.Printf("异常：%s\n", err)
+			p("异常：%s\n", err)
 		}
 	}
 
@@ -48,42 +56,45 @@ func main() {
 		logPath := "./test/log/init.log"
 		logFile, err := os.Create(logPath)
 		check(err)
-		defer logFile.Close()
+		defer func() {
+			err := logFile.Close()
+			check(err)
+		}()
 
-		fmt.Printf(">>> 初始化项目\n")
-		fmt.Printf("日志：%s\n", logPath)
+		p(">>> 初始化项目\n")
+		p("日志：%s\n", logPath)
 
 		{
-			fmt.Printf("golang 项目初始化\n")
+			p("golang 项目初始化\n")
 			cmd := exec.Command("go", "mod", "tidy")
 			cmd.Dir = "./test/golang"
 			cmd.Stdout = logFile
 			cmd.Stderr = logFile
 			err = cmd.Run()
 			if err != nil {
-				fmt.Printf("异常：%s\n", err)
+				p("异常：%s\n", err)
 			}
 		}
 		{
-			fmt.Printf("python 项目初始化\n")
+			p("python 项目初始化\n")
 			cmd := exec.Command("bash", "-c", "source .venv/bin/activate && pip install -r requirements.txt")
 			cmd.Dir = "./test/python"
 			cmd.Stdout = logFile
 			cmd.Stderr = logFile
 			err = cmd.Run()
 			if err != nil {
-				fmt.Printf("异常：%s\n", err)
+				p("异常：%s\n", err)
 			}
 		}
 		{
-			fmt.Printf("typescript 项目初始化\n")
+			p("typescript 项目初始化\n")
 			cmd := exec.Command("pnpm", "i")
 			cmd.Dir = "./test/typescript"
 			cmd.Stdout = logFile
 			cmd.Stderr = logFile
 			err = cmd.Run()
 			if err != nil {
-				fmt.Printf("异常：%s\n", err)
+				p("异常：%s\n", err)
 			}
 		}
 	}
@@ -101,17 +112,23 @@ func main() {
 		} {
 			i += 1
 
-			fmt.Printf(">>> 测试：%d\n", i)
+			p(">>> 测试：%d\n", i)
 
 			sLogPath := fmt.Sprintf("./test/log/test%d-server-%s.log", i, serverName)
 			sLogFile, err := os.Create(sLogPath)
 			check(err)
-			defer sLogFile.Close()
+			defer func() {
+				err := sLogFile.Close()
+				check(err)
+			}()
 
 			cLogPath := fmt.Sprintf("./test/log/test%d-client-%s.log", i, clientName)
 			cLogFile, err := os.Create(cLogPath)
 			check(err)
-			defer cLogFile.Close()
+			defer func() {
+				err := cLogFile.Close()
+				check(err)
+			}()
 
 			// 启动服务端
 			time.Sleep(time.Second * 5)
@@ -147,7 +164,8 @@ func golangServer(logFile io.Writer) (cancel func()) {
 
 	go func() {
 		<-c
-		cmd.Process.Kill()
+		err = cmd.Process.Kill()
+		check(err)
 	}()
 
 	return func() {
@@ -167,7 +185,8 @@ func pythonServer(logFile io.Writer) (cancel func()) {
 
 	go func() {
 		<-c
-		cmd.Process.Kill()
+		err = cmd.Process.Kill()
+		check(err)
 	}()
 
 	return func() {

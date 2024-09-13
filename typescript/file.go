@@ -1,6 +1,9 @@
 package typescript
 
 import (
+	"sort"
+	"strings"
+
 	c "columba-livia/content"
 )
 
@@ -36,14 +39,31 @@ func (b *_file) modelsNamespace() string {
 type render = func() c.C
 
 func imports() c.C {
-	importList := make([]c.C, 0, len(file.importMap))
+	importLine := make([]string, 0, len(file.importMap))
+	for line := range file.importMap {
+		importLine = append(importLine, line)
+	}
 
-	if len(file.importMap) != 0 {
-		importList = append(importList, "")
-		for line := range file.importMap {
-			importList = append(importList, c.C(line))
+	sort.Slice(importLine, func(i, j int) bool {
+		is, _ := strings.CutPrefix(importLine[i], "import ")
+		is, _ = strings.CutPrefix(is, "{ ")
+		is = strings.ToLower(is)
+
+		js, _ := strings.CutPrefix(importLine[j], "import ")
+		js, _ = strings.CutPrefix(js, "{ ")
+		js = strings.ToLower(js)
+
+		return is < js
+	})
+
+	importLineList := make([]c.C, 0, len(file.importMap))
+
+	if len(importLine) != 0 {
+		importLineList = append(importLineList, "")
+		for _, line := range importLine {
+			importLineList = append(importLineList, c.C(line))
 		}
 	}
 
-	return c.List(0, importList...)
+	return c.List(0, importLineList...)
 }

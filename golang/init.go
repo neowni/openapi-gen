@@ -153,7 +153,7 @@ func (p *Project) Render(
 
 	fileRenderMap = make(map[string]render)
 	for _, tag := range doc.Tags {
-		fileRenderMap[fmt.Sprintf("%s.go", tag.Name)] = serverApi(tag, doc.Paths.PathItems)
+		fileRenderMap[fmt.Sprintf("%s.go", tag.Name)] = serverAPI(tag, doc.Paths.PathItems)
 	}
 	fileRenderMap["convert.go"] = serverConvert()
 	fileRenderMap["route.go"] = serverRoute(doc.Tags)
@@ -171,7 +171,7 @@ func (p *Project) Render(
 
 	fileRenderMap = make(map[string]render)
 	for _, tag := range doc.Tags {
-		fileRenderMap[fmt.Sprintf("%s.go", tag.Name)] = clientApi(tag, doc.Paths.PathItems)
+		fileRenderMap[fmt.Sprintf("%s.go", tag.Name)] = clientAPI(tag, doc.Paths.PathItems)
 	}
 	fileRenderMap["convert.go"] = clientConvert()
 	fileRenderMap["route.go"] = clientRoute(doc.Tags)

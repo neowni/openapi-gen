@@ -20,11 +20,11 @@ func main() {
 
 	//																			接口注册
 
-	s.TestTag1.Op1(func(ctx context.Context, uri *message.Op1Uri, qry *message.Op1Qry, req *message.Op1Req) (rsp200 *message.Op1Rsp200, err error) {
+	s.TestTag1.Op1(func(ctx context.Context, uri *message.Op1URI, qry *message.Op1Qry, req *message.Op1Req) (rsp200 *message.Op1Rsp200, err error) {
 		rsp200 = new(message.Op1Rsp200)
 
-		rsp200.Uri1 = uri.Uri1
-		rsp200.Uri2 = uri.Uri2
+		rsp200.URI1 = uri.URI1
+		rsp200.URI2 = uri.URI2
 
 		rsp200.Qry1 = qry.Qry1
 		rsp200.Qry2 = qry.Qry2
@@ -36,13 +36,13 @@ func main() {
 		return rsp200, nil
 	})
 
-	s.TestTag1.Op2(func(ctx context.Context, uri *message.Op2Uri, qry *message.Op2Qry, req *message.Op2Req) (rsp200 *message.Op2Rsp200, err error) {
+	s.TestTag1.Op2(func(ctx context.Context, uri *message.Op2URI, qry *message.Op2Qry, req *message.Op2Req) (rsp200 *message.Op2Rsp200, err error) {
 		rsp200 = req
 
 		return rsp200, nil
 	})
 
-	s.TestTag1.Op3(func(ctx context.Context, uri *message.Op3Uri, qry *message.Op3Qry, req *message.Op3Req) (rsp200 *message.Op3Rsp200, err error) {
+	s.TestTag1.Op3(func(ctx context.Context, uri *message.Op3URI, qry *message.Op3Qry, req *message.Op3Req) (rsp200 *message.Op3Rsp200, err error) {
 		rsp200 = req
 		return rsp200, nil
 	})

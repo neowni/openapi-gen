@@ -10,6 +10,7 @@ import (
 	"github.com/pb33f/libopenapi/orderedmap"
 )
 
+// Tidy //
 // 整理 doc
 //
 //  1. 整理 path 中的 tag

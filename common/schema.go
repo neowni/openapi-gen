@@ -4,6 +4,7 @@ import (
 	"github.com/pb33f/libopenapi/datamodel/high/base"
 )
 
+// SchemaType //
 // openapi 3.1 schema 为 string / []string
 // 仅支持单一类型
 func SchemaType(
@@ -24,8 +25,8 @@ func SchemaType(
 	}
 }
 
+// SchemaItems //
 // schema item 可能为 SchemaProxy / bool
-// SchemaProxy
 func SchemaItems(
 	schema *base.Schema,
 ) *base.SchemaProxy {

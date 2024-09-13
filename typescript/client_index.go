@@ -1,17 +1,18 @@
 package typescript
 
 import (
-	c "columba-livia/content"
 	"fmt"
 
 	"github.com/pb33f/libopenapi/datamodel/high/base"
+
+	c "columba-livia/content"
 )
 
 func clientIndex(
 	tags []*base.Tag,
 ) (render render) {
 	return func() c.C {
-		file.importMap[`import { AxiosInstance } from "axios"`] = struct{}{}
+		file.importMap[`import { AxiosInstance } from "axios";`] = struct{}{}
 
 		filedList := make([]c.C, 0)
 		initList := make([]c.C, 0)
@@ -19,7 +20,7 @@ func clientIndex(
 		for _, tag := range tags {
 			name := tag.Name
 
-			file.importMap[fmt.Sprintf(`import %s from "./%s"`, name, name)] = struct{}{}
+			file.importMap[fmt.Sprintf(`import %s from "./%s";`, name, name)] = struct{}{}
 
 			filedList = append(filedList, c.C(`%s: %s;`).Format(
 				name, name,
@@ -37,8 +38,8 @@ export default class {
   }
 }
 `).TrimSpace().Format(
-			c.List(0, filedList...).Indent(2),
-			c.List(0, initList...).Indent(4),
+			c.List(0, filedList...).IndentSpace(2),
+			c.List(0, initList...).IndentSpace(4),
 		)
 	}
 }

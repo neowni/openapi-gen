@@ -1,12 +1,12 @@
 package golang
 
 import (
-	"columba-livia/common"
-	c "columba-livia/content"
-
 	"github.com/pb33f/libopenapi/datamodel/high/base"
 	v3 "github.com/pb33f/libopenapi/datamodel/high/v3"
 	"github.com/pb33f/libopenapi/orderedmap"
+
+	"columba-livia/common"
+	c "columba-livia/content"
 )
 
 func message(
@@ -64,9 +64,9 @@ func messageURI(
 	}
 
 	return c.C(`type %s = struct %s`).Format(
-		ExportName(op.ID+"URI"),
+		ExportName(op.ID)+"URI",
 		c.BodyF(
-			c.List(1, list...).Indent(4),
+			c.List(1, list...).IndentTab(1),
 		),
 	)
 }
@@ -114,9 +114,9 @@ func messageQry(
 	}
 
 	return c.C(`type %s = struct %s`).Format(
-		ExportName(op.ID+"Qry"),
+		ExportName(op.ID)+"Qry",
 		c.BodyF(
-			c.List(1, list...).Indent(4),
+			c.List(1, list...).IndentTab(1),
 		),
 	)
 }
@@ -134,7 +134,7 @@ func messageReq(
 	}
 
 	return typeDecl(
-		ExportName(op.ID+"Req"),
+		ExportName(op.ID)+"Req",
 		reqSchemaProxy.SchemaProxy,
 	)
 }
@@ -148,18 +148,18 @@ func messageRsp(
 
 	rspSchemaProxyList := common.RspSchemaProxy(op.Rsp)
 	for _, rspSchemaProxy := range rspSchemaProxyList {
-		name := op.ID + "Rsp" + rspSchemaProxy.RspCode
+		name := ExportName(op.ID) + "Rsp" + rspSchemaProxy.RspCode
 
 		if rspSchemaProxy.ContentType == common.ContentEmpty {
 			list = append(list,
 				c.C(`type %s = struct {}`).Format(
-					ExportName(name),
+					name,
 				),
 			)
 		} else {
 			list = append(list,
 				typeDecl(
-					ExportName(name),
+					name,
 					rspSchemaProxy.SchemaProxy,
 				),
 			)

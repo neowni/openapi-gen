@@ -12,6 +12,17 @@ test("test", async () => {
     })
   );
 
+  function randomEnum() {
+    switch (randomInt() % 3) {
+      case 0:
+        return models.Enum.value1;
+      case 1:
+        return models.Enum.value2;
+      default:
+        return models.Enum.value3;
+    }
+  }
+
   //                                                                            op1
   {
     const rspE: message.testTag1.op1Rsp200 = {
@@ -59,6 +70,7 @@ test("test", async () => {
       stringField: randomString(),
       intField: randomInt(),
       floatField: randomFloat(),
+      enumField: randomEnum(),
       arrayField1: Array.from({ length: 16 }, randomInt),
       arrayField2: Array.from({ length: 16 }, rdObj2),
       objectField1: {},

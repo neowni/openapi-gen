@@ -119,7 +119,7 @@ func (p *Project) Render(
 
 	fileRenderMap := make(map[string]render)
 	for _, tag := range doc.Tags {
-		fileRenderMap[fmt.Sprintf("%s.py", tag.Name)] = messageApi(tag, doc.Paths.PathItems)
+		fileRenderMap[fmt.Sprintf("%s.py", tag.Name)] = messageAPI(tag, doc.Paths.PathItems)
 	}
 	fileRenderMap["__init__.py"] = messageInit(doc.Tags)
 
@@ -136,7 +136,7 @@ func (p *Project) Render(
 
 	fileRenderMap = make(map[string]render)
 	for _, tag := range doc.Tags {
-		fileRenderMap[fmt.Sprintf("%s.py", tag.Name)] = serverApi(tag, doc.Paths.PathItems)
+		fileRenderMap[fmt.Sprintf("%s.py", tag.Name)] = serverAPI(tag, doc.Paths.PathItems)
 	}
 	fileRenderMap["__init__.py"] = serverInit(doc.Tags)
 

@@ -1,12 +1,14 @@
 package python
 
 import (
-	"columba-livia/common"
-	c "columba-livia/content"
 	"slices"
 
 	"github.com/pb33f/libopenapi/datamodel/high/base"
 	"github.com/pb33f/libopenapi/orderedmap"
+	"gopkg.in/yaml.v3"
+
+	"columba-livia/common"
+	c "columba-livia/content"
 )
 
 func models(
@@ -37,10 +39,22 @@ func typeDecl(
 ) c.C {
 	jsonType := common.SchemaType(schemaProxy.Schema())
 
-	// object / 非引用
-	// 直接定义 class
-	if !schemaProxy.IsReference() && jsonType == common.TypeObject {
-		return object(name, schemaProxy)
+	// 非引用
+	if common.SchemaRef(schemaProxy) == "" {
+		// object
+		// 直接定义 class
+		if jsonType == common.TypeObject {
+			return object(name, schemaProxy)
+		}
+
+		// enum
+		if len(schemaProxy.Schema().Enum) != 0 {
+			if jsonType != common.TypeString {
+				panic(jsonType)
+			}
+
+			return enum(name, schemaProxy)
+		}
 	}
 
 	// 其他类型
@@ -104,6 +118,32 @@ func baseTypeName(
 	panic("")
 }
 
+// 																				enum
+
+func enum(
+	name string,
+	schemaProxy *base.SchemaProxy,
+) c.C {
+	file.importMap["from enum import Enum as _Enum"] = struct{}{}
+
+	return c.List(0,
+		c.List(0,
+			c.C(`class %s(_Enum):`).Format(name),
+			c.C(`"""%s"""`).Format(schemaProxy.Schema().Description).IndentSpace(4),
+		),
+		c.List(0, c.ForList(
+			schemaProxy.Schema().Enum,
+			func(item *yaml.Node) c.C {
+				value := item.Value
+
+				return c.C(`%s = "%s"`).Format(
+					value, value,
+				)
+			},
+		)...).IndentSpace(4),
+	)
+}
+
 // 																				object - class类定义
 
 func object(
@@ -137,9 +177,9 @@ func object(
 	return c.List(1,
 		c.List(0,
 			c.C(`class %s(_pydantic.BaseModel):`).Format(name),
-			c.C(`"""%s"""`).Format(schemaProxy.Schema().Description).Indent(4),
+			c.C(`"""%s"""`).Format(schemaProxy.Schema().Description).IndentSpace(4),
 		),
-		c.List(1, fieldList...).Indent(4),
+		c.List(1, fieldList...).IndentSpace(4),
 	)
 }
 
