@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"net/http"
 	"regexp"
 	"strings"
 
@@ -24,6 +25,9 @@ import (
 func Tidy(
 	doc v3.Document,
 ) v3.Document {
+	// 日志
+	Log(">>> 预处理 openapi.yaml 文件")
+
 	tags := make(map[string]struct{}, len(doc.Tags))
 	for _, tag := range doc.Tags {
 		tags[tag.Name] = struct{}{}
@@ -31,19 +35,25 @@ func Tidy(
 
 	for i := doc.Paths.PathItems.First(); i != nil; i = i.Next() {
 		pathItem := i.Value()
-		for _, op := range []*v3.Operation{
-			pathItem.Get,
-			pathItem.Put,
-			pathItem.Post,
-			pathItem.Delete,
-			pathItem.Options,
-			pathItem.Head,
-			pathItem.Patch,
-			pathItem.Trace,
+
+		path := i.Key()
+
+		for method, op := range map[string]*v3.Operation{
+			http.MethodGet:     pathItem.Get,
+			http.MethodPut:     pathItem.Put,
+			http.MethodPost:    pathItem.Post,
+			http.MethodDelete:  pathItem.Delete,
+			http.MethodOptions: pathItem.Options,
+			http.MethodHead:    pathItem.Head,
+			http.MethodPatch:   pathItem.Patch,
+			http.MethodTrace:   pathItem.Trace,
 		} {
 			if op == nil {
 				continue
 			}
+
+			// 日志
+			Log("%-50s %s", path, method)
 
 			// 需要含有 OperationId
 			if op.OperationId == "" {
@@ -95,6 +105,10 @@ func Tidy(
 			for rsp := op.Responses.Codes.First(); rsp != nil; rsp = rsp.Next() {
 				if strings.HasPrefix(rsp.Key(), "2") {
 					has200 = true
+				}
+
+				if rsp.Value().Content == nil {
+					continue
 				}
 
 				// content 只能有单一类型

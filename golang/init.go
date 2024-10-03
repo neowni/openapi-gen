@@ -34,6 +34,8 @@ func (p *Project) Render(
 		p.Project = common.P(".")
 	}
 
+	common.Log(">>> 渲染 golang: %s", *p.Project)
+
 	// 																			前期处理
 
 	// 获取项目名
@@ -73,7 +75,11 @@ func (p *Project) Render(
 		packageName := filepath.Base(*path)
 		fileMap := make(map[string]string)
 
+		common.Log("整理包: %s", *path)
+
 		for name, render := range fileRenderMap {
+			common.Log("渲染文件: %s", name)
+
 			// 文件上下文
 			file = &_file{
 				importMap: make(map[string]string),
@@ -115,6 +121,7 @@ func (p *Project) Render(
 
 		ignoreList = append(ignoreList, packagePath)
 
+		common.Log("")
 		return nil
 	}
 

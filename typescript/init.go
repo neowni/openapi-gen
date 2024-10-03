@@ -25,9 +25,12 @@ func (p *Project) Render(
 	if p == nil {
 		return nil, nil
 	}
+
 	if p.Project == nil {
 		p.Project = common.P(".")
 	}
+
+	common.Log(">>> 渲染 typescript: %s", *p.Project)
 
 	// 																			前期处理
 	renderPackage := func(
@@ -42,7 +45,11 @@ func (p *Project) Render(
 		packagePath := filepath.Join(*p.Project, *path)
 		fileMap := make(map[string]string)
 
+		common.Log("整理包: %s", *path)
+
 		for name, fileRender := range fileRenderMap {
+			common.Log("渲染文件: %s", name)
+
 			file = &_file{
 				importMap: make(map[string]struct{}),
 			}
@@ -88,6 +95,7 @@ func (p *Project) Render(
 
 		ignoreList = append(ignoreList, packagePath)
 
+		common.Log("")
 		return nil
 	}
 
