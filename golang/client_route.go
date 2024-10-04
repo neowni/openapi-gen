@@ -14,33 +14,34 @@ func clientRoute(
 
 		routeStructBody := c.BodyF(c.List(0,
 			c.ForList(tags, func(item *base.Tag) c.C {
-				return c.C("%s *%s").Format(
-					ExportName(item.Name),
-					item.Name,
-				)
+				return c.F("{{.field}} *{{.type}}").Format(map[string]any{
+					"field": publicName(item.Name),
+					"type":  privateName(item.Name),
+				})
 			})...,
 		).IndentTab(1))
 
 		routeInit := c.List(0,
 			c.ForList(tags, func(item *base.Tag) c.C {
-				return c.C("c.%s = &%s{client}").Format(
-					ExportName(item.Name),
-					item.Name,
-				)
+				return c.F("c.{{.field}} = &{{.type}}{client}").Format(map[string]any{
+					"field": publicName(item.Name),
+					"type":  privateName(item.Name),
+				})
 			})...,
 		).IndentTab(1)
 
-		return c.C(`
-type Client = struct%s
+		return c.F(`
+type Client = struct {{.struct}}
 
 func New(client *resty.Client) *Client {
 	c := new(Client)
-%s
+{{.init}}
 	return c
 }
-`).TrimSpace().Format(
-			routeStructBody,
-			routeInit,
-		)
+`).
+			Format(map[string]any{
+				"struct": routeStructBody,
+				"init":   routeInit,
+			})
 	}
 }

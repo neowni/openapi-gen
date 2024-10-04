@@ -1,7 +1,6 @@
 package c
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -15,12 +14,6 @@ func (c C) String() string {
 // 去除 空格
 func (c C) TrimSpace() C {
 	return C(strings.TrimSpace(string(c)))
-}
-
-// Format //
-// 格式化
-func (c C) Format(a ...any) C {
-	return C(fmt.Sprintf(string(c), a...))
 }
 
 // IndentSpace //
@@ -99,6 +92,16 @@ func List(gap int, list ...C) C {
 
 	gapLine := strings.Repeat("\n", gap+1)
 	return C(strings.Join(lines, gapLine))
+}
+
+func Flat(lists ...[]C) []C {
+	list := make([]C, 0)
+
+	for _, l := range lists {
+		list = append(list, l...)
+	}
+
+	return list
 }
 
 func JoinSpace(list ...C) C {

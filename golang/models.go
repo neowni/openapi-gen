@@ -64,23 +64,20 @@ func typeDecl(
 			panic(jsonType)
 		}
 
-		exportName := ExportName(name)
-
 		return c.List(1,
-			c.C("type %s = string").Format(
-				exportName,
-			),
+			c.F("type {{.}} = string").Format(publicName(name)),
 
-			c.C(`const %s`).Format(c.BodyC(
+			c.F(`const {{.}}`).Format(c.BodyC(
 				c.List(0, c.ForList(
 					schemaProxy.Schema().Enum,
 					func(item *yaml.Node) c.C {
 						value := item.Value
 
-						return c.C(`%s%s %s = "%s"`).Format(
-							exportName, ExportName(value),
-							exportName, value,
-						)
+						return c.F(`{{.const}} {{.type}} = "{{.value}}"`).Format(map[string]any{
+							"const": publicName(name) + publicName(value),
+							"type":  publicName(name),
+							"value": value,
+						})
 					},
 				)...).IndentTab(1),
 			)),
@@ -88,10 +85,10 @@ func typeDecl(
 	}
 
 	// 其他类型
-	return c.C("type %s = %s").Format(
-		ExportName(name),
-		type_(schemaProxy),
-	)
+	return c.F("type {{.name}} = {{.type}}").Format(map[string]any{
+		"name": publicName(name),
+		"type": type_(schemaProxy),
+	})
 }
 
 //																				类型
@@ -102,7 +99,7 @@ func type_(
 	// 引用类型
 	ref := common.SchemaRef(schemaProxy)
 	if ref != "" {
-		return c.C(file.modelsNamespace() + ExportName(ref))
+		return c.C(file.modelsNamespace() + publicName(ref))
 	}
 
 	jsonType := common.SchemaType(schemaProxy.Schema())
@@ -120,7 +117,7 @@ func type_(
 
 	// array
 	if jsonType == common.TypeArray {
-		return c.C("[]%s").Format(
+		return c.F("[]{{.}}").Format(
 			type_(common.SchemaItems(schemaProxy.Schema())),
 		)
 	}
@@ -174,21 +171,18 @@ func object(
 				doc("", pair.Value().Schema().Description),
 
 				// 声明
-				c.List(-1,
-					c.C("%s %s").Format(
-						ExportName(name),
-						type_,
-					),
-					c.C(" `json:\"%s%s\"%s`").Format(
-						name, omitempty,
-						requiredTag,
-					),
-				),
+				c.F("{{.field}} {{.type}} `json:\"{{.name}}{{.omitempty}}\"{{.requiredTag}}`").Format(map[string]any{
+					"field":       publicName(name),
+					"type":        type_,
+					"name":        name,
+					"omitempty":   omitempty,
+					"requiredTag": requiredTag,
+				}),
 			),
 		)
 	}
 
-	return c.C("struct %s").Format(
+	return c.F("struct {{.}}").Format(
 		c.BodyF(
 			c.List(1, fieldList...).IndentTab(1),
 		),

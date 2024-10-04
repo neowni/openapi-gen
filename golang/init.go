@@ -100,7 +100,7 @@ func (p *Project) Render(
 			}
 
 			// 整理成文件
-			header := c.C("// 由 columba-livia 生成\npackage %s").Format(packageName)
+			header := c.F("// 由 columba-livia 生成\npackage {{.}}").Format(packageName)
 
 			imports := imports(projectName)
 

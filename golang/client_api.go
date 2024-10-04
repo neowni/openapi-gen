@@ -38,13 +38,12 @@ func clientAPI(
 func clientAPIStruct(
 	name string,
 ) c.C {
-	return c.C(`
-type %s struct {
+	return c.F(`
+type {{.}} struct {
 	client *resty.Client
 }
 `).
-		TrimSpace().
-		Format(name)
+		Format(privateName(name))
 }
 
 func clientAPIOperation(
@@ -73,26 +72,27 @@ func clientAPIOperation(
 
 	// 																	函数名称
 
-	funcName := c.C("func (tag *%s) %s%s %s").Format(
-		op.Tag, ExportName(op.ID),
-		// 函数参数
-		c.BodyC(c.List(0,
-			c.If(uriExist, c.C("uri *message.%s,").Format(ExportName(op.ID+"URI"))),
-			c.If(qryExist, c.C("qry *message.%s,").Format(ExportName(op.ID+"Qry"))),
-			c.If(reqExist, c.C("req *message.%s,").Format(ExportName(op.ID+"Req"))),
+	funcName := c.F("func (tag *{{.tag}}) {{.name}}{{.args}} {{.return}}").Format(map[string]any{
+		"tag":  op.Tag,
+		"name": publicName(op.ID),
+
+		"args": c.BodyC(c.List(0,
+			c.If(uriExist, c.F("uri *message.{{.}},").Format(publicName(op.ID+"Uri"))),
+			c.If(qryExist, c.F("qry *message.{{.}},").Format(publicName(op.ID+"Qry"))),
+			c.If(reqExist, c.F("req *message.{{.}},").Format(publicName(op.ID+"Req"))),
 		).IndentTab(1)),
-		// 函数返回值
-		c.BodyC(c.List(0,
-			append(
-				c.ForList(op.Rsp, func(item orderedmap.Pair[string, *v3.Response]) c.C {
-					return c.C("rsp%s *message.%s,").Format(
-						item.Key(), ExportName(op.ID+"Rsp"+item.Key()),
-					)
-				}),
-				c.C("err error,"),
-			)...,
-		).IndentTab(1)),
-	)
+
+		"return": c.BodyC(c.List(0, c.Flat(
+			c.ForList(op.Rsp, func(item orderedmap.Pair[string, *v3.Response]) c.C {
+				return c.F("rsp{{.code}} *message.{{.name}},").
+					Format(map[string]any{
+						"code": item.Key(),
+						"name": publicName(op.ID + "Rsp" + item.Key()),
+					})
+			}),
+			[]c.C{c.C("err error,")},
+		)...).IndentTab(1)),
+	})
 
 	//																	函数主体
 
@@ -103,79 +103,86 @@ r := tag.client.R()
 
 	funcBodyURI := c.If(uriExist, c.List(0,
 		c.ForMap(
-			uriType, func(key string, value string) c.C {
-				return c.C(`convert.uri%s(r, "%s", uri.%s)`).Format(
-					ExportName(value), key, ExportName(key),
-				)
+			uriType, func(name string, type_ string) c.C {
+				return c.F(`convert.uri{{.type}}(r, "{{.name}}", uri.{{.field}})`).Format(map[string]any{
+					"type":  publicName(type_),
+					"name":  name,
+					"field": publicName(name),
+				})
 			},
 		)...,
 	))
 
-	funcBodyQry := c.If(qryExist, c.List(0,
-		c.ForMap(
-			qryType, func(key string, value string) c.C {
-				return c.C(`convert.qry%s(r, "%s", qry.%s)`).Format(
-					ExportName(value), key, ExportName(key),
-				)
-			},
-		)...,
-	))
+	funcBodyQry := c.If(qryExist, c.List(0, c.ForMap(
+		qryType, func(name string, type_ string) c.C {
+			return c.F(`convert.qry{{.type}}(r, "{{.name}}", qry.{{.field}})`).Format(map[string]any{
+				"type":  publicName(type_),
+				"name":  name,
+				"field": publicName(name),
+			})
+		},
+	)...))
 
 	funcBodyReq := c.If(reqExist,
-		c.C(`r.SetBody(%sreq)`).Format(
+		c.F(`r.SetBody({{.}}req)`).Format(
 			// 对于 text 类型，需要将 *string 转换为 string
 			c.If(reqType == common.ContentText, "*"),
 		),
 	)
 
 	// 返回语句内容
-	funcReturn := c.Join(", ", append(
-		c.ForList(op.Rsp, func(item orderedmap.Pair[string, *v3.Response]) c.C {
-			return c.C("rsp%s").Format(item.Key())
-		}),
-		c.C("err"),
+	funcReturn := c.Join(", ",
+		c.Flat(
+			c.ForList(op.Rsp, func(item orderedmap.Pair[string, *v3.Response]) c.C {
+				return c.F("rsp{{.}}").Format(item.Key())
+			}),
+			[]c.C{c.C("err")},
+		)...,
+	)
+
+	funcBodyHandle := c.F(`
+resp, err := r.{{.method}}("{{.path}}")
+if err != nil {
+	return {{.return}}
+}
+`).Format(map[string]any{
+		"method": publicName(strings.ToLower(op.Method)),
+		"path":   clientPath(op.Path),
+		"return": funcReturn,
+	})
+
+	funcBodyRspCases := c.List(0, c.ForList(
+		rspType, func(item common.ContentSchema) c.C {
+			return c.F(`
+case {{.code}}:
+	rsp{{.code}} = new(message.{{.name}})
+	err = convert.Response{{.type}}(resp, rsp{{.code}})
+	return {{.return}}
+`).
+				Format(map[string]any{
+					"code":   item.RspCode,
+					"name":   publicName(op.ID + "Rsp" + item.RspCode),
+					"type":   publicName(string(item.ContentType)),
+					"return": funcReturn,
+				})
+		},
 	)...)
 
-	funcBodyHandle := c.C(`
-resp, err := r.%s("%s")
-if err != nil {
-	return %s
-}
-`).TrimSpace().Format(
-		ExportName(strings.ToLower(op.Method)),
-		clientPath(op.Path),
-		funcReturn,
-	)
-
-	funcBodyRsp := c.C(`
+	funcBodyRsp := c.F(`
 switch resp.StatusCode() {
-%s
+{{.cases}}
 default:
 	err = convert.ResponseError(resp)
-	return %s
+	return {{.return}}
 }
-`).TrimSpace().Format(
-		c.List(0,
-			c.ForList(rspType, func(item common.ContentSchema) c.C {
-				return c.C(`
-case %s:
-	rsp%s = new(message.%s)
-	err = convert.Response%s(resp, rsp%s)
-	return %s
-`).TrimSpace().Format(
-					item.RspCode,
-					item.RspCode, ExportName(op.ID+"Rsp"+item.RspCode),
-					ExportName(string(item.ContentType)), item.RspCode,
-					funcReturn,
-				)
-			})...,
-		),
-		// default返回
-		funcReturn,
-	)
+`).
+		Format(map[string]any{
+			"cases":  funcBodyRspCases,
+			"return": funcReturn,
+		})
 
 	return c.List(0,
-		doc(ExportName(op.ID), op.Description),
+		doc(publicName(op.ID), op.Description),
 		c.JoinSpace(funcName, c.BodyF(
 			c.List(1,
 				funcBodyNew,

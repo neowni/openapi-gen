@@ -29,16 +29,16 @@ func clientAPI(
 			list = append(list, clientAPIOperation(op))
 		}
 
-		return c.C(`
+		return c.F(`
 export default class {
   private instance: AxiosInstance;
   constructor(instance: AxiosInstance) {
     this.instance = instance;
   }
 
-%s
+{{.}}
 }
-`).TrimSpace().Format(c.List(1, list...).IndentSpace(2))
+`).Format(c.List(1, list...).IndentSpace(2))
 	}
 }
 
@@ -52,25 +52,25 @@ func clientAPIOperation(
 	rspType := common.RspSchemaProxy(op.Rsp)
 
 	// 函数名称/参数
-	funcNameArg := c.C("async %s%s:").Format(
-		op.ID,
-		c.BodyC(c.List(0,
-			c.If(uriExist, c.C("uri: message.%s.%sURI,").Format(op.Tag, op.ID)),
-			c.If(qryExist, c.C("qry: message.%s.%sQry,").Format(op.Tag, op.ID)),
-			c.If(reqExist, c.C("req: message.%s.%sReq,").Format(op.Tag, op.ID)),
+	funcNameArg := c.F("async {{.op}}{{.body}}:").Format(map[string]any{
+		"op": op.ID,
+		"body": c.BodyC(c.List(0,
+			c.If(uriExist, c.F("uri: message.{{.tag}}.{{.op}}URI,").Format(map[string]any{"tag": op.Tag, "op": op.ID})),
+			c.If(qryExist, c.F("qry: message.{{.tag}}.{{.op}}Qry,").Format(map[string]any{"tag": op.Tag, "op": op.ID})),
+			c.If(reqExist, c.F("req: message.{{.tag}}.{{.op}}Req,").Format(map[string]any{"tag": op.Tag, "op": op.ID})),
 		).IndentSpace(2)),
-	)
+	})
 
 	// 函数返回值
-	funcReturn := c.C("Promise<%s>").Format(c.BodyF(
+	funcReturn := c.F("Promise<{{.}}>").Format(c.BodyF(
 		c.List(0, c.ForList(
 			rspType,
 			func(item common.ContentSchema) c.C {
-				return c.C("_%s?: message.%s.%sRsp%s;").Format(
-					item.RspCode,
-					op.Tag, op.ID,
-					item.RspCode,
-				)
+				return c.F("_{{.code}}?: message.{{.tag}}.{{.op}}Rsp{{.code}};").Format(map[string]any{
+					"tag":  op.Tag,
+					"op":   op.ID,
+					"code": item.RspCode,
+				})
 			},
 		)...).IndentSpace(2),
 	))
@@ -78,34 +78,36 @@ func clientAPIOperation(
 	// 函数主体发起请求
 
 	// 对于没有参数的路径，使用 " 而非 ` 包含其中字符
-	uri := c.C("url: `%s`,").Format(clientPath(op.Path))
+	uri := c.F("url: `{{.}}`,").Format(clientPath(op.Path))
 	if !strings.Contains(uri.String(), "$") {
-		uri = c.C("url: \"%s\",").Format(clientPath(op.Path))
+		uri = c.F("url: \"{{.}}\",").Format(clientPath(op.Path))
 	}
-	funcBodyHandle := c.C(`const rsp = await this.instance.request(%s);`).TrimSpace().Format(
+	funcBodyHandle := c.F(`const rsp = await this.instance.request({{.}});`).Format(
 		c.BodyF(c.List(0,
 			uri,
-			c.C("method: \"%s\",").Format(op.Method),
+			c.F("method: \"{{.}}\",").Format(op.Method),
 			c.If(qryExist, c.C("params: qry,")),
 			c.If(reqExist, c.C("data: req,")),
 		).IndentSpace(2)),
 	)
 
 	// 函数主体处理响应
-	funcBodyReturn := c.C(`
+	funcBodyReturnCases := c.List(0,
+		c.ForList(rspType, func(item common.ContentSchema) c.C {
+			return c.F(`
+case {{.}}:
+  return { _{{.}}: rsp.data };
+`).Format(item.RspCode)
+		})...,
+	)
+
+	funcBodyReturn := c.F(`
 switch (rsp.status) {
-%s
+{{.}}
   default:
     return {};
 }
-	`).TrimSpace().Format(c.List(0,
-		c.ForList(rspType, func(item common.ContentSchema) c.C {
-			return c.C(`
-case %s:
-  return { _%s: rsp.data };
-`).TrimSpace().Format(item.RspCode, item.RspCode)
-		})...,
-	).IndentSpace(2))
+	`).Format(funcBodyReturnCases.IndentSpace(2))
 
 	// 函数主体
 	funcBody := c.BodyF(c.List(1,

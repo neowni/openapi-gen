@@ -2,6 +2,9 @@ package python
 
 import (
 	"fmt"
+	"slices"
+	"sort"
+	"strings"
 
 	c "columba-livia/content"
 )
@@ -50,17 +53,81 @@ func (b *_file) modelsNamespace() string {
 type render = func() c.C
 
 func imports() c.C {
-	importList := make([]c.C, 0, len(file.importMap))
+	importList := make([]string, 0, len(file.importMap))
 
 	// 默认导入 annotations
 	importList = append(importList, "from __future__ import annotations as _annotations")
 
-	if len(file.importMap) != 0 {
-		importList = append(importList, "")
-		for line := range file.importMap {
-			importList = append(importList, c.C(line))
+	// 整理 import
+	standard := make([]string, 0)
+	thirdParty := make([]string, 0)
+	internal := make([]string, 0)
+
+	for line := range file.importMap {
+		switch importPackageName(line) {
+		case "typing", "enum", "collections.abc":
+			standard = append(standard, line)
+		case "pydantic", "flask":
+			thirdParty = append(thirdParty, line)
+		default:
+			internal = append(internal, line)
 		}
 	}
 
-	return c.List(0, importList...)
+	sort.Strings(standard)
+	sort.Strings(thirdParty)
+	slices.SortFunc(internal, func(a string, b string) int {
+		aName := importPackageName(a)
+		bName := importPackageName(b)
+
+		r := 0
+
+		if aName < bName {
+			r += 2
+		} else {
+			r -= 2
+		}
+
+		if a > b {
+			r += 1
+		} else {
+			r -= 1
+		}
+
+		return r
+	})
+
+	if len(standard) != 0 {
+		importList = append(importList, "")
+		importList = append(importList, standard...)
+	}
+
+	if len(thirdParty) != 0 {
+		importList = append(importList, "")
+		importList = append(importList, thirdParty...)
+	}
+
+	if len(internal) != 0 {
+		importList = append(importList, "")
+		importList = append(importList, internal...)
+	}
+
+	return c.C(strings.Join(importList, "\n"))
+}
+
+func importPackageName(line string) string {
+	name := ""
+
+	// 查找包名
+	fields := strings.Fields(line)
+	index := slices.Index(fields, "from")
+	if index == -1 {
+		index = slices.Index(fields, "import")
+	}
+
+	if index >= 0 {
+		name = fields[index+1]
+	}
+
+	return name
 }

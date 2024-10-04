@@ -58,9 +58,10 @@ func typeDecl(
 	}
 
 	// 其他类型
-	return c.C("%s = %s").Format(name, typeName(
-		schemaProxy,
-	))
+	return c.F("{{.name}} = {{.type}}").Format(map[string]any{
+		"name": name,
+		"type": typeName(schemaProxy),
+	})
 }
 
 //                                                                              类型
@@ -98,7 +99,7 @@ func typeName(
 		itemTypeName := typeName(common.SchemaItems(schemaProxy.Schema()))
 
 		file.importMap["import typing as _typing"] = struct{}{}
-		return c.C("_typing.List[%s]").Format(itemTypeName)
+		return c.F("_typing.List[{{.}}]").Format(itemTypeName)
 	}
 
 	panic("")
@@ -128,17 +129,15 @@ func enum(
 
 	return c.List(0,
 		c.List(0,
-			c.C(`class %s(_Enum):`).Format(name),
-			c.C(`"""%s"""`).Format(schemaProxy.Schema().Description).IndentSpace(4),
+			c.F(`class {{.}}(_Enum):`).Format(name),
+			doc(schemaProxy.Schema().Description).IndentSpace(4),
 		),
 		c.List(0, c.ForList(
 			schemaProxy.Schema().Enum,
 			func(item *yaml.Node) c.C {
 				value := item.Value
 
-				return c.C(`%s = "%s"`).Format(
-					value, value,
-				)
+				return c.F(`{{.}} = "{{.}}"`).Format(value)
 			},
 		)...).IndentSpace(4),
 	)
@@ -160,24 +159,27 @@ func object(
 		required := slices.Contains(requiredNameList, name)
 		if !required {
 			file.importMap["import typing as _typing"] = struct{}{}
-			typeName = c.C("_typing.Optional[%s] = None").Format(typeName)
+			typeName = c.F("_typing.Optional[{{.}}] = None").Format(typeName)
 		}
 
 		// 字段
 		fieldList = append(fieldList,
 			c.List(0,
 				// 文档
-				doc(pair.Value().Schema().Description),
+				comment(pair.Value().Schema().Description),
 				// 声明
-				c.C("%s: %s").Format(name, typeName),
+				c.F("{{.name}}: {{.type}}").Format(map[string]any{
+					"name": name,
+					"type": typeName,
+				}),
 			),
 		)
 	}
 
 	return c.List(1,
 		c.List(0,
-			c.C(`class %s(_pydantic.BaseModel):`).Format(name),
-			c.C(`"""%s"""`).Format(schemaProxy.Schema().Description).IndentSpace(4),
+			c.F(`class {{.}}(_pydantic.BaseModel):`).Format(name),
+			doc(schemaProxy.Schema().Description).IndentSpace(4),
 		),
 		c.List(1, fieldList...).IndentSpace(4),
 	)

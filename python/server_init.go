@@ -26,14 +26,14 @@ func serverInit(
 
 			// 字段内容
 			fieldList = append(fieldList,
-				c.C("self.%s = _%s(app)").Format(tag.Name, tag.Name),
+				c.F("self.{{.}} = _{{.}}(app)").Format(tag.Name),
 			)
 		}
 
-		return c.C(`
+		return c.F(`
 class Server:
     def __init__(self, app: _Flask):
-%s
-		`).TrimSpace().Format(c.List(0, fieldList...).IndentSpace(8))
+{{.}}
+`).Format(c.List(0, fieldList...).IndentSpace(8))
 	}
 }

@@ -21,7 +21,7 @@ func models(
 		for _, pair := range common.Range(schemas) {
 			list = append(list, c.List(1,
 				doc(pair.Value().Schema().Description),
-				c.C("export %s").Format(typeDecl(
+				c.F("export {{.}}").Format(typeDecl(
 					pair.Key(),
 					pair.Value(),
 				)),
@@ -49,25 +49,25 @@ func typeDecl(
 			panic(jsonType)
 		}
 
-		return c.C(`enum %s %s`).Format(
-			name,
-			c.BodyF(
+		return c.F(`enum {{.name}} {{.decl}}`).Format(map[string]any{
+			"name": name,
+			"decl": c.BodyF(
 				c.List(0, c.ForList(
 					schemaProxy.Schema().Enum,
 					func(item *yaml.Node) c.C {
 						value := item.Value
 
-						return c.C(`%s = "%s",`).Format(
-							value, value,
-						)
+						return c.F(`{{.}} = "{{.}}",`).Format(value)
 					},
 				)...).IndentSpace(2),
 			),
-		)
+		})
 	}
 
 	// 其他类型
-	return c.C("type %s = %s;").Format(name, type_(schemaProxy))
+	return c.F("type {{.name}} = {{.type}};").Format(map[string]any{
+		"name": name, "type": type_(schemaProxy),
+	})
 }
 
 //                                                                              类型
@@ -89,7 +89,7 @@ func type_(
 
 	// 数组类型
 	if jsonType == common.TypeArray {
-		return c.C("%s[]").Format(type_(common.SchemaItems(schemaProxy.Schema())))
+		return c.F("{{.}}[]").Format(type_(common.SchemaItems(schemaProxy.Schema())))
 	}
 
 	// object 类型
@@ -134,9 +134,11 @@ func object(
 
 		fieldList = append(fieldList, c.List(1,
 			doc(pair.Value().Schema().Description),
-			c.C("%s%s: %s;").Format(
-				name, required, type_,
-			),
+			c.F("{{.name}}{{.required}}: {{.type}};").Format(map[string]any{
+				"name":     name,
+				"required": required,
+				"type":     type_,
+			}),
 		))
 	}
 

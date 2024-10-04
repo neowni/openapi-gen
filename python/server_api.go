@@ -25,6 +25,7 @@ func serverAPI(
 		file.importMap["from flask import Flask as _Flask"] = struct{}{}
 		file.importMap["from flask import request as _request"] = struct{}{}
 		file.importMap["import typing as _typing"] = struct{}{}
+		file.importMap["from . import _convert"] = struct{}{}
 
 		list := make([]c.C, 0)
 		for _, operation := range common.TagOperationList(tag.Name, pathItems) {
@@ -34,8 +35,8 @@ func serverAPI(
 		return c.List(1,
 			// 类名
 			c.List(0,
-				c.C(`class %s:`).Format(tag.Name),
-				c.C(`"""%s"""`).Format(tag.Description).IndentSpace(4),
+				c.F(`class {{.}}:`).Format(tag.Name),
+				doc(tag.Description).IndentSpace(4),
 			),
 			// init 函数
 			c.List(0,
@@ -61,21 +62,25 @@ func serverAPIOperation(
 
 	//                                                                 handler 声明
 
-	handlerDecl := c.C("handler: _typing.Callable%s,").Format(c.BodyS(
+	handlerDecl := c.F("handler: _typing.Callable{{.}},").Format(c.BodyS(
 		c.List(0,
 			// 参数
-			c.C("%s,").Format(c.BodyS(
+			c.F("{{.}},").Format(c.BodyS(
 				c.List(0,
-					c.If(uriExist, c.C("_message.%s.%s.uri,").Format(op.Tag, op.ID)),
-					c.If(qryExist, c.C("_message.%s.%s.qry,").Format(op.Tag, op.ID)),
-					c.If(reqExist, c.C("_message.%s.%s.req,").Format(op.Tag, op.ID)),
+					c.If(uriExist, c.F("_message.{{.tag}}.{{.op}}.uri,").Format(map[string]any{"tag": op.Tag, "op": op.ID})),
+					c.If(qryExist, c.F("_message.{{.tag}}.{{.op}}.qry,").Format(map[string]any{"tag": op.Tag, "op": op.ID})),
+					c.If(reqExist, c.F("_message.{{.tag}}.{{.op}}.req,").Format(map[string]any{"tag": op.Tag, "op": op.ID})),
 				).IndentSpace(4),
 			)),
 			// 返回值
-			c.C("_typing.Awaitable[_typing.Tuple%s],").Format(c.BodyS(
+			c.F("_typing.Awaitable[_typing.Tuple{{.}}],").Format(c.BodyS(
 				c.List(0,
 					c.ForList(rspType, func(item common.ContentSchema) c.C {
-						return c.C("_typing.Optional[_message.%s.%s.rsp%s],").Format(op.Tag, op.ID, item.RspCode)
+						return c.F("_typing.Optional[_message.{{.tag}}.{{.op}}.rsp{{.code}}],").Format(map[string]any{
+							"tag":  op.Tag,
+							"op":   op.ID,
+							"code": item.RspCode,
+						})
 					})...,
 				).IndentSpace(4),
 			)),
@@ -84,33 +89,37 @@ func serverAPIOperation(
 
 	//                                                                  注册内容
 
-	registerName := c.C(`
-@self.__app.%s("%s")
-async def %s(%s):
-`).TrimSpace().Format(
-		strings.ToLower(op.Method), serverPath(op.Path),
-		op.ID, c.If(uriExist, "**path"),
-	)
-
-	handlerURI := c.If(uriExist, c.C("uri = _message.%s.%s.uri(**path)").Format(op.Tag, op.ID))
-
-	handlerQry := c.If(qryExist, c.C(`
-args: dict = _request.args.to_dict()
-qry = _message.%s.%s.qry(**args)
+	registerName := c.F(`
+@self.__app.{{.method}}("{{.path}}")
+async def {{.op}}({{.args}}):
 `).
-		TrimSpace().Format(op.Tag, op.ID),
+		Format(map[string]any{
+			"method": strings.ToLower(op.Method),
+			"path":   serverPath(op.Path),
+			"op":     op.ID,
+			"args":   c.If(uriExist, "**path"),
+		})
+
+	handlerURI := c.If(uriExist, c.F("uri = _message.{{.tag}}.{{.op}}.uri(**path)").
+		Format(map[string]any{"tag": op.Tag, "op": op.ID}))
+
+	handlerQry := c.If(qryExist, c.F(`
+args: dict = _request.args.to_dict()
+qry = _message.{{.tag}}.{{.op}}.qry(**args)
+`).
+		Format(map[string]any{"tag": op.Tag, "op": op.ID}),
 	)
 
 	handlerReq := c.C("")
 	switch reqType.ContentType {
 	case common.ContentJSON:
 		if common.SchemaType(reqType.SchemaProxy.Schema()) == common.TypeArray {
-			handlerReq = c.C(`
-reqType = _typing.get_args(_message.%s.%s.req)[0]
+			handlerReq = c.F(`
+reqType = _typing.get_args(_message.{{.tag}}.{{.op}}.req)[0]
 req = [reqType(**i) for i in _request.get_json()]
-`).TrimSpace().Format(op.Tag, op.ID)
+`).Format(map[string]any{"tag": op.Tag, "op": op.ID})
 		} else {
-			handlerReq = c.C("req = _message.%s.%s.req(**_request.get_json())").Format(op.Tag, op.ID)
+			handlerReq = c.F("req = _message.{{.tag}}.{{.op}}.req(**_request.get_json())").Format(map[string]any{"tag": op.Tag, "op": op.ID})
 		}
 
 	case common.ContentText:
@@ -119,42 +128,26 @@ req = [reqType(**i) for i in _request.get_json()]
 
 	handlerHandleReturn := c.JoinSpace(
 		c.ForList(rspType, func(item common.ContentSchema) c.C {
-			return c.C("rsp%s,").Format(item.RspCode)
+			return c.F("rsp{{.}},").Format(item.RspCode)
 		})...,
 	)
 
-	handlerHandle := c.C("%s await handler(%s)").Format(
-		c.If(handlerHandleReturn != "", c.C("(%s) =").Format(handlerHandleReturn)),
-		c.Join(", ",
+	handlerHandle := c.F("{{.return}} await handler({{.args}})").Format(map[string]any{
+		"return": c.If(handlerHandleReturn != "", c.F("({{.}}) =").Format(handlerHandleReturn)),
+		"args": c.Join(", ",
 			c.If(uriExist, "uri"),
 			c.If(qryExist, "qry"),
 			c.If(reqExist, "req"),
 		),
-	)
+	})
 
 	handlerRsp := make([]c.C, 0)
 	for _, rsp := range rspType {
-		r := c.C(`""`)
-		if rsp.ContentType == common.ContentJSON {
-			if common.SchemaType(rsp.SchemaProxy.Schema()) == common.TypeArray {
-				r = c.C("[i.model_dump_json(exclude_none=True) for i in rsp%s]").Format(rsp.RspCode)
-			} else {
-				r = c.C("rsp%s.model_dump_json(exclude_none=True)").Format(rsp.RspCode)
-			}
-		}
-		if rsp.ContentType == common.ContentText {
-			r = c.C("rsp%s").Format(rsp.RspCode)
-		}
-
 		handlerRsp = append(handlerRsp,
-			c.C(`
-if rsp%s is not None:
-    return %s, %s
-`).
-				TrimSpace().Format(
-				rsp.RspCode,
-				r, rsp.RspCode,
-			),
+			c.F(`
+if rsp{{.}} is not None:
+    return _convert.rsp(rsp{{.}}), {{.}}
+`).Format(rsp.RspCode),
 		)
 	}
 
@@ -162,14 +155,14 @@ if rsp%s is not None:
 
 	return c.List(1,
 		c.List(0,
-			c.C("def %s%s:").Format(
-				op.ID,
-				c.BodyC(c.List(0,
+			c.F("def {{.op}}{{.args}}:").Format(map[string]any{
+				"op": op.ID,
+				"args": c.BodyC(c.List(0,
 					"self,",
 					handlerDecl,
 				).IndentSpace(4)),
-			),
-			c.C(`"""%s"""`).Format(op.Description).IndentSpace(4),
+			}),
+			doc(op.Description).IndentSpace(4),
 		),
 		c.List(0,
 			registerName,

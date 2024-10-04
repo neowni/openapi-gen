@@ -22,24 +22,20 @@ func clientIndex(
 
 			file.importMap[fmt.Sprintf(`import %s from "./%s";`, name, name)] = struct{}{}
 
-			filedList = append(filedList, c.C(`%s: %s;`).Format(
-				name, name,
-			))
-			initList = append(initList, c.C(`this.%s = new %s(instance);`).Format(
-				name, name,
-			))
+			filedList = append(filedList, c.F(`{{.}}: {{.}};`).Format(name))
+			initList = append(initList, c.F(`this.{{.}} = new {{.}}(instance);`).Format(name))
 		}
 
-		return c.C(`
+		return c.F(`
 export default class {
-%s
+{{.body}}
   constructor(instance: AxiosInstance) {
-%s
+{{.init}}
   }
 }
-`).TrimSpace().Format(
-			c.List(0, filedList...).IndentSpace(2),
-			c.List(0, initList...).IndentSpace(4),
-		)
+`).Format(map[string]any{
+			"body": c.List(0, filedList...).IndentSpace(2),
+			"init": c.List(0, initList...).IndentSpace(4),
+		})
 	}
 }

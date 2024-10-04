@@ -38,12 +38,11 @@ func serverAPI(
 func serverAPIStruct(
 	name string,
 ) c.C {
-	return c.C(`
-type %s struct {
+	return c.F(`
+type {{.}} struct {
 	engine gin.IRoutes
 }
 `).
-		TrimSpace().
 		Format(name)
 }
 
@@ -60,137 +59,133 @@ func serverAPIOperation(
 
 	// 																handler 声明
 
-	handlerDecl := c.C(`
-handler func%s %s,
-`).
-		TrimSpace().
-		Format(
-			// 参数
-			c.BodyC(c.List(0,
+	handlerDecl := c.F(`handler func{{.args}} {{.return}},`).
+		Format(map[string]any{
+			"args": c.BodyC(c.List(0,
 				c.C("ctx context.Context,"),
-				c.If(uriExist, c.C("uri *message.%s,").Format(ExportName(op.ID)+"URI")),
-				c.If(qryExist, c.C("qry *message.%s,").Format(ExportName(op.ID)+"Qry")),
-				c.If(reqExist, c.C("req *message.%s,").Format(ExportName(op.ID)+"Req")),
+				c.If(uriExist, c.F("uri *message.{{.}},").Format(publicName(op.ID+"Uri"))),
+				c.If(qryExist, c.F("qry *message.{{.}},").Format(publicName(op.ID+"Qry"))),
+				c.If(reqExist, c.F("req *message.{{.}},").Format(publicName(op.ID+"Req"))),
 			).IndentTab(1)),
-			// 返回值
-			c.BodyC(c.List(0,
-				append(
-					c.ForList(op.Rsp, func(item orderedmap.Pair[string, *v3.Response]) c.C {
-						return c.C("rsp%s *message.%s,").Format(
-							item.Key(), ExportName(op.ID+"Rsp"+item.Key()),
-						)
-					}),
-					c.C("err error,"),
-				)...,
-			).IndentTab(1)),
-		)
+
+			"return": c.BodyC(c.List(0, c.Flat(
+				c.ForList(op.Rsp, func(item orderedmap.Pair[string, *v3.Response]) c.C {
+					return c.F("rsp{{.code}} *message.{{.name}},").
+						Format(map[string]any{
+							"code": item.Key(),
+							"name": publicName(op.ID + "Rsp" + item.Key()),
+						})
+				}),
+				[]c.C{c.C("err error,")},
+			)...).IndentTab(1)),
+		})
 
 	// 																注册函数名称
 
-	registerName := c.C("func (tag *%s) %s%s").Format(
-		op.Tag, ExportName(op.ID),
-		c.BodyC(handlerDecl.IndentTab(1)),
-	)
+	registerName := c.F("func (tag *{{.tag}}) {{.op}}{{.decl}}").Format(map[string]any{
+		"tag": op.Tag,
+		"op":  publicName(op.ID),
+		// 参数：提供 handler 函数
+		"decl": c.BodyC(handlerDecl.IndentTab(1)),
+	})
 
 	// 																  handle函数
 
 	handlerURI := c.If(uriExist,
-		c.C(`
+		c.F(`
 // 解析 uri
-uri := new(message.%s)
+uri := new(message.{{.}})
 if convert.BindURI(ctx, uri) {
 	return
 }
-`).TrimSpace().Format(ExportName(op.ID)+"URI"),
-	)
+`).Format(publicName(op.ID+"Uri")))
 
 	handlerQry := c.If(qryExist,
-		c.C(`
+		c.F(`
 // 解析 qry
-qry := new(message.%s)
+qry := new(message.{{.}})
 if convert.BindQry(ctx, qry) {
 	return
 }
-`).TrimSpace().Format(ExportName(op.ID)+"Qry"),
-	)
+`).Format(publicName(op.ID)+"Qry"))
 
 	handlerReq := c.If(reqExist,
-		c.C(`
+		c.F(`
 // 解析 req
-req := new(message.%s)
-if convert.BindReq%s(ctx, req) {
+req := new(message.{{.name}})
+if convert.BindReq{{.type}}(ctx, req) {
 	return
 }
-`).TrimSpace().Format(
-			ExportName(op.ID)+"Req",
-			ExportName(string(reqType)),
-		),
+`).Format(map[string]any{
+			"name": publicName(op.ID + "Req"),
+			"type": publicName(string(reqType)),
+		}),
 	)
 
 	// 处理请求与异常
-	handlerHandle := c.C(`
+	handlerHandle := c.F(`
 // 处理请求
-%s := handler(%s)
+{{.return}} := handler({{.args}})
 
 // 返回异常
 if convert.ResponseError(ctx, err) {
 	return
 }
-`).TrimSpace().Format(
-		// 返回值
-		c.Join(", ", append(
-			c.ForList(op.Rsp, func(item orderedmap.Pair[string, *v3.Response]) c.C {
-				return c.C("rsp%s").Format(item.Key())
-			}),
-			"err",
-		)...),
-		// 参数
-		c.Join(", ",
+`).Format(map[string]any{
+		"return": c.Join(", ",
+			c.Flat(
+				c.ForList(op.Rsp, func(item orderedmap.Pair[string, *v3.Response]) c.C {
+					return c.F("rsp{{.}}").Format(item.Key())
+				}),
+				[]c.C{"err"},
+			)...,
+		),
+		"args": c.Join(", ",
 			"ctx",
 			c.If(uriExist, "uri"),
 			c.If(qryExist, "qry"),
 			c.If(reqExist, "req"),
 		),
-	)
+	})
 
 	// 响应请求
-	handlerReturn := c.C(`
-// 返回响应
-switch true {
-%s
-}
-`).
-		TrimSpace().Format(
-		c.List(0,
-			c.ForList(rspType, func(item common.ContentSchema) c.C {
-				return c.C(`
-case rsp%s != nil:
-	convert.Response%s(ctx, %s, rsp%s)
+	handlerReturnCases := c.List(0,
+		c.ForList(rspType, func(item common.ContentSchema) c.C {
+			return c.F(`
+case rsp{{.code}} != nil:
+convert.Response{{.type}}(ctx, {{.code}}, rsp{{.code}})
 `,
-				).Format(item.RspCode, ExportName(string(item.ContentType)), item.RspCode, item.RspCode)
-			})...,
-		),
+			).Format(map[string]any{
+				"code": item.RspCode,
+				"type": publicName(string(item.ContentType)),
+			})
+		})...,
 	)
 
-	handlerFunc := c.C("func(ctx *gin.Context) %s,").Format(
-		c.BodyF(
-			c.List(1,
-				handlerURI,
-				handlerQry,
-				handlerReq,
-				handlerHandle,
-				handlerReturn,
-			).IndentTab(1),
-		),
+	handlerReturn := c.F(`
+// 返回响应
+switch true {
+{{.}}
+}
+`).Format(handlerReturnCases)
+
+	handlerFunc := c.F("func(ctx *gin.Context) {{.}},").Format(
+		c.BodyF(c.List(1,
+			handlerURI,
+			handlerQry,
+			handlerReq,
+			handlerHandle,
+			handlerReturn,
+		).IndentTab(1)),
 	)
 
 	// 																注册函数主体
 
 	registerBody := c.BodyF(
-		c.C("tag.engine.Handle%s").Format(c.BodyC(
+		c.F("tag.engine.Handle{{.}}").Format(c.BodyC(
 			c.List(0,
-				c.C(`"%s",`).Format(op.Method),
-				c.C(`"%s",`).Format(serverPath(op.Path)),
+				c.F(`"{{.}}",`).Format(op.Method),
+				c.F(`"{{.}}",`).Format(serverPath(op.Path)),
 				handlerFunc,
 			).IndentTab(1),
 		)).IndentTab(1),

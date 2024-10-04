@@ -44,17 +44,17 @@ func messageURI(
 	for _, parameter := range op.URI {
 		fieldList = append(fieldList, c.List(0,
 			doc(parameter.Description),
-			c.C("%s: %s;").Format(
-				parameter.Name,
-				baseTypeName(parameter.Schema),
-			),
+			c.F("{{.field}}: {{.type}};").Format(map[string]any{
+				"field": parameter.Name,
+				"type":  baseTypeName(parameter.Schema),
+			}),
 		))
 	}
 
-	return c.C("export type %sURI = %s;").Format(
-		op.ID,
-		c.BodyF(c.List(1, fieldList...).IndentSpace(2)),
-	)
+	return c.F("export type {{.op}}URI = {{.type}};").Format(map[string]any{
+		"op":   op.ID,
+		"type": c.BodyF(c.List(1, fieldList...).IndentSpace(2)),
+	})
 }
 
 // 																				qry
@@ -75,18 +75,18 @@ func messageQry(
 
 		fieldList = append(fieldList, c.List(0,
 			doc(parameter.Description),
-			c.C("%s%s: %s;").Format(
-				parameter.Name,
-				required,
-				baseTypeName(parameter.Schema),
-			),
+			c.F("{{.name}}{{.required}}: {{.type}};").Format(map[string]any{
+				"name":     parameter.Name,
+				"required": required,
+				"type":     baseTypeName(parameter.Schema),
+			}),
 		))
 	}
 
-	return c.C("export type %sQry = %s;").Format(
-		op.ID,
-		c.BodyF(c.List(1, fieldList...).IndentSpace(2)),
-	)
+	return c.F("export type {{.op}}Qry = {{.type}};").Format(map[string]any{
+		"op":   op.ID,
+		"type": c.BodyF(c.List(1, fieldList...).IndentSpace(2)),
+	})
 }
 
 // 																				req
@@ -101,7 +101,7 @@ func messageReq(
 		return ""
 	}
 
-	return c.C("export %s").Format(
+	return c.F("export {{.}}").Format(
 		typeDecl(
 			fmt.Sprintf("%sReq", op.ID),
 			op.Req.Content.First().Value().Schema,
@@ -122,16 +122,11 @@ func messageRsp(
 
 		if rspSchemaProxy.ContentType == common.ContentEmpty {
 			list = append(list,
-				c.C(`export type %s = string`).Format(
-					name,
-				),
+				c.F(`export type {{.}} = string`).Format(name),
 			)
 		} else {
 			list = append(list,
-				c.C("export %s").Format(typeDecl(
-					name,
-					rspSchemaProxy.SchemaProxy,
-				)),
+				c.F("export {{.}}").Format(typeDecl(name, rspSchemaProxy.SchemaProxy)),
 			)
 		}
 	}

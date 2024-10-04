@@ -50,25 +50,21 @@ func messageURI(
 				// 文档
 				doc("", par.Description),
 				// 声明
-				c.JoinSpace(
-					c.C("%s %s").Format(
-						ExportName(name),
-						type_,
-					),
-					c.C("`uri:\"%s\" binding:\"required\"`").Format(
-						name,
-					),
-				),
+				c.F("{{.field}} {{.type}} `uri:\"{{.name}}\" binding:\"required\"`").Format(map[string]any{
+					"field": publicName(name),
+					"type":  type_,
+					"name":  name,
+				}),
 			),
 		)
 	}
 
-	return c.C(`type %s = struct %s`).Format(
-		ExportName(op.ID)+"URI",
-		c.BodyF(
+	return c.F(`type {{.name}} = struct {{.body}}`).Format(map[string]any{
+		"name": publicName(op.ID + "Uri"),
+		"body": c.BodyF(
 			c.List(1, list...).IndentTab(1),
 		),
-	)
+	})
 }
 
 // 																				qry
@@ -99,26 +95,19 @@ func messageQry(
 				// 文档
 				doc("", par.Description),
 				// 声明
-				c.JoinSpace(
-					c.C("%s %s").Format(
-						ExportName(name),
-						type_,
-					),
-					c.C("`form:\"%s\"%s`").Format(
-						name,
-						requiredTag,
-					),
-				),
+				c.F("{{.field}} {{.type}} `form:\"{{.tag}}\"`").Format(map[string]any{
+					"field": publicName(name),
+					"type":  type_,
+					"tag":   requiredTag,
+				}),
 			),
 		)
 	}
 
-	return c.C(`type %s = struct %s`).Format(
-		ExportName(op.ID)+"Qry",
-		c.BodyF(
-			c.List(1, list...).IndentTab(1),
-		),
-	)
+	return c.F(`type {{.name}} = struct {{.body}}`).Format(map[string]any{
+		"name": publicName(op.ID + "Qry"),
+		"body": c.BodyF(c.List(1, list...).IndentTab(1)),
+	})
 }
 
 // 																				req
@@ -134,7 +123,7 @@ func messageReq(
 	}
 
 	return typeDecl(
-		ExportName(op.ID)+"Req",
+		publicName(op.ID+"Req"),
 		reqSchemaProxy.SchemaProxy,
 	)
 }
@@ -148,13 +137,11 @@ func messageRsp(
 
 	rspSchemaProxyList := common.RspSchemaProxy(op.Rsp)
 	for _, rspSchemaProxy := range rspSchemaProxyList {
-		name := ExportName(op.ID) + "Rsp" + rspSchemaProxy.RspCode
+		name := publicName(op.ID) + "Rsp" + rspSchemaProxy.RspCode
 
 		if rspSchemaProxy.ContentType == common.ContentEmpty {
 			list = append(list,
-				c.C(`type %s = struct {}`).Format(
-					name,
-				),
+				c.F(`type {{.}} = struct {}`).Format(name),
 			)
 		} else {
 			list = append(list,

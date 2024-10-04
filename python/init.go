@@ -147,6 +147,7 @@ func (p *Project) Render(
 		fileRenderMap[fmt.Sprintf("%s.py", tag.Name)] = serverAPI(tag, doc.Paths.PathItems)
 	}
 	fileRenderMap["__init__.py"] = serverInit(doc.Tags)
+	fileRenderMap["_convert.py"] = serverConvert()
 
 	err = renderPackage(
 		p.Server,

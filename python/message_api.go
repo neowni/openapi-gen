@@ -21,8 +21,8 @@ func messageAPI(
 				c.List(1,
 					// 使用 class 用作 命名空间
 					c.List(0,
-						c.C("class %s:").Format(op.ID),
-						c.C(`"""%s"""`).Format(op.Description).IndentSpace(4),
+						c.F("class {{.}}:").Format(op.ID),
+						doc(op.Description).IndentSpace(4),
 					),
 					// message 定义
 					c.List(1,
@@ -58,9 +58,12 @@ func messageURI(
 		fieldList = append(fieldList,
 			c.List(0,
 				// 文档
-				doc(par.Description),
+				comment(par.Description),
 				// 声明
-				c.C("%s: %s").Format(name, typeName),
+				c.F("{{.name}}: {{.type}}").Format(map[string]any{
+					"name": name,
+					"type": typeName,
+				}),
 			),
 		)
 	}
@@ -88,16 +91,19 @@ func messageQry(
 
 		if !common.ParRequired(par) {
 			file.importMap["import typing as _typing"] = struct{}{}
-			typeName = c.C("_typing.Optional[%s] = None").Format(typeName)
+			typeName = c.F("_typing.Optional[{{.}}] = None").Format(typeName)
 		}
 
 		// 字段
 		fieldList = append(fieldList,
 			c.List(0,
 				// 文档
-				doc(par.Description),
+				comment(par.Description),
 				// 声明
-				c.C("%s: %s").Format(name, typeName),
+				c.F("{{.name}}: {{.type}}").Format(map[string]any{
+					"name": name,
+					"type": typeName,
+				}),
 			),
 		)
 	}
@@ -140,7 +146,7 @@ func messageRsp(
 		if rspSchemaProxy.ContentType == common.ContentEmpty {
 			// 空类型
 			list = append(list,
-				c.C("%s = str").Format(name),
+				c.F("{{.}} = str").Format(name),
 			)
 		} else {
 			// 引用
@@ -152,7 +158,10 @@ func messageRsp(
 
 			if refName == "" && pythonType != "" {
 				// 非引用 且 为基础类型
-				return c.C("%s = %s").Format(name, pythonType)
+				return c.F("{{.name}} = {{.type}}").Format(map[string]any{
+					"name": name,
+					"type": pythonType,
+				})
 			} else {
 				// 其他类型
 				list = append(list,

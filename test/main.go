@@ -16,7 +16,7 @@ func check(err error) {
 	}
 }
 
-func p(format string, a ...any) {
+func log(format string, a ...any) {
 	_, err := os.Stdout.Write([]byte(fmt.Sprintf(format, a...)))
 	check(err)
 }
@@ -39,15 +39,15 @@ func main() {
 			check(err)
 		}()
 
-		p(">>> 生成代码\n")
-		p("日志：%s\n", logPath)
+		log(">>> 生成代码\n")
+		log("日志：%s\n", logPath)
 
 		cmd := exec.Command("go", "run", "cmd/n-cl/main.go", "./test")
 		cmd.Stdout = logFile
 		cmd.Stderr = logFile
 		err = cmd.Run()
 		if err != nil {
-			p("异常：%s\n", err)
+			log("异常：%s\n", err)
 		}
 	}
 
@@ -61,40 +61,40 @@ func main() {
 			check(err)
 		}()
 
-		p(">>> 初始化项目\n")
-		p("日志：%s\n", logPath)
+		log(">>> 初始化项目\n")
+		log("日志：%s\n", logPath)
 
 		{
-			p("golang 项目初始化\n")
+			log("golang 项目初始化\n")
 			cmd := exec.Command("go", "mod", "tidy")
 			cmd.Dir = "./test/golang"
 			cmd.Stdout = logFile
 			cmd.Stderr = logFile
 			err = cmd.Run()
 			if err != nil {
-				p("异常：%s\n", err)
+				log("异常：%s\n", err)
 			}
 		}
 		{
-			p("python 项目初始化\n")
+			log("python 项目初始化\n")
 			cmd := exec.Command("bash", "-c", "source .venv/bin/activate && pip install -r requirements.txt")
 			cmd.Dir = "./test/python"
 			cmd.Stdout = logFile
 			cmd.Stderr = logFile
 			err = cmd.Run()
 			if err != nil {
-				p("异常：%s\n", err)
+				log("异常：%s\n", err)
 			}
 		}
 		{
-			p("typescript 项目初始化\n")
+			log("typescript 项目初始化\n")
 			cmd := exec.Command("pnpm", "i")
 			cmd.Dir = "./test/typescript"
 			cmd.Stdout = logFile
 			cmd.Stderr = logFile
 			err = cmd.Run()
 			if err != nil {
-				p("异常：%s\n", err)
+				log("异常：%s\n", err)
 			}
 		}
 	}
@@ -112,7 +112,7 @@ func main() {
 		} {
 			i += 1
 
-			p(">>> 测试：%d\n", i)
+			log(">>> 测试：%d\n", i)
 
 			sLogPath := fmt.Sprintf("./test/log/test%d-server-%s.log", i, serverName)
 			sLogFile, err := os.Create(sLogPath)
@@ -135,7 +135,7 @@ func main() {
 			close := serverCmd(sLogFile)
 
 			// 客户端
-			time.Sleep(time.Second * 5)
+			time.Sleep(time.Second * 15)
 			clientCmd(cLogFile)
 
 			// 停止服务端
