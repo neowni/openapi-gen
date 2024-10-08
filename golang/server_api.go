@@ -153,7 +153,7 @@ if convert.ResponseError(ctx, err) {
 		c.ForList(rspType, func(item common.ContentSchema) c.C {
 			return c.F(`
 case rsp{{.code}} != nil:
-convert.Response{{.type}}(ctx, {{.code}}, rsp{{.code}})
+	convert.Response{{.type}}(ctx, {{.code}}, rsp{{.code}})
 `,
 			).Format(map[string]any{
 				"code": item.RspCode,

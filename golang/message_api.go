@@ -95,8 +95,9 @@ func messageQry(
 				// 文档
 				doc("", par.Description),
 				// 声明
-				c.F("{{.field}} {{.type}} `form:\"{{.tag}}\"`").Format(map[string]any{
+				c.F("{{.field}} {{.type}} `form:\"{{.name}}\"{{.tag}}`").Format(map[string]any{
 					"field": publicName(name),
+					"name":  name,
 					"type":  type_,
 					"tag":   requiredTag,
 				}),
