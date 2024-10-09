@@ -77,9 +77,9 @@ func clientAPIOperation(
 		"name": publicName(op.ID),
 
 		"args": c.BodyC(c.List(0,
-			c.If(uriExist, c.F("uri *message.{{.}},").Format(publicName(op.ID+"Uri"))),
-			c.If(qryExist, c.F("qry *message.{{.}},").Format(publicName(op.ID+"Qry"))),
-			c.If(reqExist, c.F("req *message.{{.}},").Format(publicName(op.ID+"Req"))),
+			c.If(uriExist, c.F("uri *message.{{.}},").Format(publicName(op.Tag+publicName(op.ID)+"Uri"))),
+			c.If(qryExist, c.F("qry *message.{{.}},").Format(publicName(op.Tag+publicName(op.ID)+"Qry"))),
+			c.If(reqExist, c.F("req *message.{{.}},").Format(publicName(op.Tag+publicName(op.ID)+"Req"))),
 		).IndentTab(1)),
 
 		"return": c.BodyC(c.List(0, c.Flat(
@@ -87,7 +87,7 @@ func clientAPIOperation(
 				return c.F("rsp{{.code}} *message.{{.name}},").
 					Format(map[string]any{
 						"code": item.Key(),
-						"name": publicName(op.ID + "Rsp" + item.Key()),
+						"name": publicName(op.Tag + publicName(op.ID) + "Rsp" + item.Key()),
 					})
 			}),
 			[]c.C{c.C("err error,")},
@@ -161,7 +161,7 @@ case {{.code}}:
 `).
 				Format(map[string]any{
 					"code":   item.RspCode,
-					"name":   publicName(op.ID + "Rsp" + item.RspCode),
+					"name":   publicName(op.Tag + publicName(op.ID) + "Rsp" + item.RspCode),
 					"type":   publicName(string(item.ContentType)),
 					"return": funcReturn,
 				})

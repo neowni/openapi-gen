@@ -20,8 +20,8 @@ func main() {
 
 	//																			接口注册
 
-	s.TestTag1.Op1(func(ctx context.Context, uri *message.Op1URI, qry *message.Op1Qry, req *message.Op1Req) (rsp200 *message.Op1Rsp200, err error) {
-		rsp200 = new(message.Op1Rsp200)
+	s.TestTag1.Op1(func(ctx context.Context, uri *message.TestTag1Op1URI, qry *message.TestTag1Op1Qry, req *message.TestTag1Op1Req) (rsp200 *message.TestTag1Op1Rsp200, err error) {
+		rsp200 = new(message.TestTag1Op1Rsp200)
 
 		rsp200.URI1 = uri.URI1
 		rsp200.URI2 = uri.URI2
@@ -36,35 +36,35 @@ func main() {
 		return rsp200, nil
 	})
 
-	s.TestTag1.Op2(func(ctx context.Context, uri *message.Op2URI, qry *message.Op2Qry, req *message.Op2Req) (rsp200 *message.Op2Rsp200, err error) {
+	s.TestTag1.Op2(func(ctx context.Context, uri *message.TestTag1Op2URI, qry *message.TestTag1Op2Qry, req *message.TestTag1Op2Req) (rsp200 *message.TestTag1Op2Rsp200, err error) {
 		rsp200 = req
 
 		return rsp200, nil
 	})
 
-	s.TestTag1.Op3(func(ctx context.Context, uri *message.Op3URI, qry *message.Op3Qry, req *message.Op3Req) (rsp200 *message.Op3Rsp200, err error) {
+	s.TestTag1.Op3(func(ctx context.Context, uri *message.TestTag1Op3URI, qry *message.TestTag1Op3Qry, req *message.TestTag1Op3Req) (rsp200 *message.TestTag1Op3Rsp200, err error) {
 		rsp200 = req
 		return rsp200, nil
 	})
 
-	s.TestTag2.Op4(func(ctx context.Context) (rsp200 *message.Op4Rsp200, err error) {
-		return new(message.Op4Rsp200), nil
+	s.TestTag2.Op4(func(ctx context.Context) (rsp200 *message.TestTag2Op4Rsp200, err error) {
+		return new(message.TestTag2Op4Rsp200), nil
 	})
 
-	s.TestTag2.Op5(func(ctx context.Context) (rsp204 *message.Op5Rsp204, err error) {
-		return new(message.Op5Rsp204), nil
+	s.TestTag2.Op5(func(ctx context.Context) (rsp204 *message.TestTag2Op5Rsp204, err error) {
+		return new(message.TestTag2Op5Rsp204), nil
 	})
 
-	s.TestTag2.Op6(func(ctx context.Context, req *message.Op6Req) (rsp200 *message.Op6Rsp200, rsp201 *message.Op6Rsp201, rsp202 *message.Op6Rsp202, rsp203 *message.Op6Rsp203, err error) {
+	s.TestTag2.Op6(func(ctx context.Context, req *message.TestTag2Op6Req) (rsp200 *message.TestTag2Op6Rsp200, rsp201 *message.TestTag2Op6Rsp201, rsp202 *message.TestTag2Op6Rsp202, rsp203 *message.TestTag2Op6Rsp203, err error) {
 		switch req.Code {
 		case 200:
-			return new(message.Op6Rsp200), nil, nil, nil, nil
+			return new(message.TestTag2Op6Rsp200), nil, nil, nil, nil
 		case 201:
-			return nil, new(message.Op6Rsp201), nil, nil, nil
+			return nil, new(message.TestTag2Op6Rsp201), nil, nil, nil
 		case 202:
-			return nil, nil, new(message.Op6Rsp202), nil, nil
+			return nil, nil, new(message.TestTag2Op6Rsp202), nil, nil
 		case 203:
-			return nil, nil, nil, new(message.Op6Rsp203), nil
+			return nil, nil, nil, new(message.TestTag2Op6Rsp203), nil
 		}
 
 		return nil, nil, nil, nil, fmt.Errorf("op6 code %d", req.Code)

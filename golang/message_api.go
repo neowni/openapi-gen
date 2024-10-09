@@ -60,7 +60,7 @@ func messageURI(
 	}
 
 	return c.F(`type {{.name}} = struct {{.body}}`).Format(map[string]any{
-		"name": publicName(op.ID + "Uri"),
+		"name": publicName(op.Tag + publicName(op.ID) + "Uri"),
 		"body": c.BodyF(
 			c.List(1, list...).IndentTab(1),
 		),
@@ -106,7 +106,7 @@ func messageQry(
 	}
 
 	return c.F(`type {{.name}} = struct {{.body}}`).Format(map[string]any{
-		"name": publicName(op.ID + "Qry"),
+		"name": publicName(op.Tag + publicName(op.ID) + "Qry"),
 		"body": c.BodyF(c.List(1, list...).IndentTab(1)),
 	})
 }
@@ -124,7 +124,7 @@ func messageReq(
 	}
 
 	return typeDecl(
-		publicName(op.ID+"Req"),
+		publicName(op.Tag+publicName(op.ID)+"Req"),
 		reqSchemaProxy.SchemaProxy,
 	)
 }
@@ -138,7 +138,7 @@ func messageRsp(
 
 	rspSchemaProxyList := common.RspSchemaProxy(op.Rsp)
 	for _, rspSchemaProxy := range rspSchemaProxyList {
-		name := publicName(op.ID) + "Rsp" + rspSchemaProxy.RspCode
+		name := publicName(op.Tag + publicName(op.ID) + "Rsp" + rspSchemaProxy.RspCode)
 
 		if rspSchemaProxy.ContentType == common.ContentEmpty {
 			list = append(list,

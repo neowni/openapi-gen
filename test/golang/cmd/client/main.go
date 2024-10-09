@@ -108,7 +108,7 @@ func main() {
 	// 																			op1
 
 	{
-		rspE := &message.Op1Rsp200{
+		rspE := &message.TestTag1Op1Rsp200{
 			URI1: rd.string(),
 			URI2: rd.int(),
 			Qry1: rd.string(),
@@ -119,15 +119,15 @@ func main() {
 		}
 
 		rspA, err := c.TestTag1.Op1(
-			&message.Op1URI{
+			&message.TestTag1Op1URI{
 				URI1: rspE.URI1,
 				URI2: rspE.URI2,
 			},
-			&message.Op1Qry{
+			&message.TestTag1Op1Qry{
 				Qry1: rspE.Qry1,
 				Qry2: rspE.Qry2,
 			},
-			&message.Op1Req{
+			&message.TestTag1Op1Req{
 				Req1: rspE.Req1,
 				Req2: rspE.Req2,
 			},
@@ -145,7 +145,7 @@ func main() {
 			}
 		}
 
-		rspE := &message.Op2Rsp200{
+		rspE := &message.TestTag1Op2Rsp200{
 			StringField: rd.string(),
 			IntField:    rd.int(),
 			FloatField:  rd.float64(),
@@ -161,11 +161,11 @@ func main() {
 		}
 
 		rspA, err := c.TestTag1.Op2(
-			&message.Op2URI{
+			&message.TestTag1Op2URI{
 				URI1: rd.string(),
 				URI2: rd.int(),
 			},
-			&message.Op2Qry{
+			&message.TestTag1Op2Qry{
 				Qry1: rd.string(),
 			},
 			rspE,
@@ -179,11 +179,11 @@ func main() {
 		rspE := rd.string()
 
 		rspA, err := c.TestTag1.Op3(
-			&message.Op2URI{
+			&message.TestTag1Op2URI{
 				URI1: rd.string(),
 				URI2: rd.int(),
 			},
-			&message.Op2Qry{
+			&message.TestTag1Op2Qry{
 				Qry1: rd.string(),
 			},
 			&rspE,
@@ -210,7 +210,7 @@ func main() {
 	{
 		code := 200 + rd.rand.Intn(4)
 
-		rsp200, rsp201, rsp202, rsp203, err := c.TestTag2.Op6(&message.Op6Req{
+		rsp200, rsp201, rsp202, rsp203, err := c.TestTag2.Op6(&message.TestTag2Op6Req{
 			Code: code,
 		})
 
