@@ -43,6 +43,7 @@ func publicName(
 
 	// 特定首字母缩写
 	publicName = strings.ReplaceAll(publicName, "Id", "ID")
+	publicName = strings.ReplaceAll(publicName, "Ssh", "SSH")
 	publicName = strings.ReplaceAll(publicName, "Api", "API")
 	publicName = strings.ReplaceAll(publicName, "Url", "URL")
 	publicName = strings.ReplaceAll(publicName, "Uri", "URI")
